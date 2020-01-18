@@ -134,3 +134,5 @@ dmypy.json
 .idea/vcs.xml
 data/
 .idea
+dask-worker-space
+*.fits
