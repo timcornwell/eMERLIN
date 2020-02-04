@@ -8,7 +8,7 @@ docs:
   before_script:
     - apt-get update
     - apt-get -y install pandoc
-#    - pip install -r requirements.txt -r requirements-docs.txt
+    - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
   script:
     - PYTHONPATH=`pwd` make -k -j -C docs html
@@ -21,8 +21,8 @@ docs:
 
 unittests:
   stage: build
-#  before_script:
-#    - pip install -r requirements.txt -r requirements-test.txt
+  before_script:
+    - pip install -r requirements.txt -r requirements-test.txt
   script:
     - pip install pytest pytest-xdist pytest-cov
     - py.test -n 4 tests --verbose --cov=erp --cov-report=html:coverage --durations=30 --forked
