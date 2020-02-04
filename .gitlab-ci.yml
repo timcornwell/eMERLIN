@@ -15,7 +15,7 @@ docs:
     - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
   script:
-    - PYTHONPATH=`pwd`:../rascil make -k -j -C docs html
+    - ERP=`pwd` PYTHONPATH=`pwd`:../rascil make -k -j -C docs html
   after_script:
     - mv docs/build/html html
   artifacts:
@@ -33,7 +33,7 @@ unittests:
     - pip install -r requirements.txt -r requirements-test.txt
   script:
     - pip install pytest pytest-xdist pytest-cov
-    - PYTHONPATH=`pwd`:../rascil py.test -n 4 tests --verbose --cov=erp --cov-report=html:coverage --forked
+    - ERP=`pwd` PYTHONPATH=`pwd`:../rascil py.test -n 4 tests --verbose --cov=erp --cov-report=html:coverage --forked
   artifacts:
     paths:
       - coverage
