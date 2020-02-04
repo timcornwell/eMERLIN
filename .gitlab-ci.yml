@@ -15,7 +15,7 @@ docs:
     - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
   script:
-    - PYTHONPATH=`pwd`:$PYTHONPATH make -k -j -C docs html
+    - PYTHONPATH=`pwd`:../rascil make -k -j -C docs html
   after_script:
     - mv docs/build/html html
   artifacts:
@@ -31,12 +31,9 @@ unittests:
     - python setup.py install
     - cd ..
     - pip install -r requirements.txt -r requirements-test.txt
-    - git clone https://github.com/SKA-ScienceDataProcessor/rascil rascil
-    - cd rascil
-    - python setup.py install
   script:
     - pip install pytest pytest-xdist pytest-cov
-    - PYTHONPATH=`pwd`:$PYTHONPATH py.test -n 4 tests --verbose --cov=erp --cov-report=html:coverage --forked
+    - PYTHONPATH=`pwd`:../rascil py.test -n 4 tests --verbose --cov=erp --cov-report=html:coverage --forked
   artifacts:
     paths:
       - coverage
