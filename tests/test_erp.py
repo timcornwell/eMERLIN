@@ -22,9 +22,9 @@ class TestERP(unittest.TestCase):
         
         small = True
         if small:
-            self.ms_name = "../data/3C277.1C.ms"
+            self.ms_name = "data/3C277.1C.ms"
         else:
-            self.ms_name = "../data/3C277.1_avg.ms"
+            self.ms_name = "data/3C277.1_avg.ms"
 
     def tearDown(self):
         pass
