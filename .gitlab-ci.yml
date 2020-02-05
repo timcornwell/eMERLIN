@@ -33,7 +33,7 @@ unittests:
     - pip install -r requirements.txt -r requirements-test.txt
   script:
     - pip install pytest pytest-xdist pytest-cov
-    - ERP=`pwd` PYTHONPATH=`pwd`:../rascil py.test -n 4 tests --verbose --cov=erp --cov-report=html:coverage --forked
+    - ERP=`pwd` PYTHONPATH=`pwd`:../rascil py.test tests --verbose --cov=erp --cov-report=html:coverage --forked
   artifacts:
     paths:
       - coverage

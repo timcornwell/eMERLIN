@@ -1,5 +1,5 @@
 # eMERLIN
-Temporary home for eMERLIN scripts
+Temporary home for eMERLIN RASCIL pipeline scripts
 
 The first version of a notebook in is exploratory/script1/eMERLIN_imaging.ipynb. This run ICAL on the 
 calibrated data.

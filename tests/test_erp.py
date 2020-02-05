@@ -15,6 +15,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 
 from erp.erp_functions import erp_list_ms, erp_load_ms
+from erp.erp_path import erp_path
 
 class TestERP(unittest.TestCase):
     
@@ -22,9 +23,9 @@ class TestERP(unittest.TestCase):
         
         small = True
         if small:
-            self.ms_name = "data/3C277.1C.ms"
+            self.ms_name = erp_path("data/3C277.1C.ms")
         else:
-            self.ms_name = "data/3C277.1_avg.ms"
+            self.ms_name = erp_path("data/3C277.1_avg.ms")
 
     def tearDown(self):
         pass
