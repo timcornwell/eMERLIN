@@ -13,8 +13,8 @@ paramiko
 photutils
 python-casacore
 graphviz
-pyfftw
 reproject
 scikit-image
 scipy
 seqfile
+ConfigParser

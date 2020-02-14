@@ -21,9 +21,9 @@ if sys.platform == 'darwin':
 # Py_Initialize() and they do define main() ), we are just cheating to
 # re-use the setuptools build support.
 
-packages = ['erp']
+packages = ['functions']
 package_data = [i for p in packages for i in glob.glob(p + '/*/') + glob.glob(p + '/*/*/') + glob.glob(p + '/*/*/*/')]
-setup(name='erp',
+setup(name='functions',
       version='0.1',
       python_requires='>=3.6',
       description='eMERLIN RASCIL Pipeline',

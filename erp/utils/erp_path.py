@@ -4,7 +4,7 @@
 
 import os
 def erp_path(path):
-    """Converts a path that might be relative to erp root into an
+    """Converts a path that might be relative to functions root into an
     absolute path::
 
         erp_path('data/3C277.1C.ms')

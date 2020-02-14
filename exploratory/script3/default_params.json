@@ -1,0 +1,63 @@
+{
+  "global": {
+    "imaging_context"        : "ng",
+    "project"                : "RASCIL"
+  },
+  "flag": {
+    "strategy"                : "eMERLIN_strategy.rfis"
+  },
+  "average_channels": {
+    "across_spw"              : false
+  },
+  "get_advice": {
+    "guard_band_image"         : 6.0,
+    "delA"                     : 0.02,
+    "oversampling_synthesised_beam" : 3.0,
+    "wprojection_planes"       : 1
+  },
+  "weight": {
+    "algorithm"               : "uniform"
+  },
+  "create_images":  {
+    "npixel":                 2048
+  },
+  "cip": {
+    "nmajor"                 : 5,
+    "niter"                  : 1000,
+    "algorithm"              : "msclean",
+    "gain"                   : 0.1,
+    "scales"                 : [0, 3, 10],
+    "threshold"              : 0.0001,
+    "fractional_threshold"   : 0.1,
+    "window_shaper"          : "quarter",
+    "do_wstacking"           : false
+  },
+  "ical": {
+    "nmajor"                 : 5,
+    "niter"                  : 1000,
+    "algorithm"              : "msclean",
+    "gain"                   : 0.1,
+    "scales"                 : [0, 3, 10],
+    "threshold"              : 0.0001,
+    "fractional_threshold"   : 0.1,
+    "window_shaper"          : "quarter",
+    "do_wstacking"           : true,
+    "T_first_selfcal"        : 1,
+    "T_phase_only"           : true,
+    "T_timeslice"            : "auto",
+    "G_first_selfcal"        : 1,
+    "G_phase_only"           : true,
+    "G_timeslice"            : "auto",
+    "global"                 : false,
+    "calibration_context"    : "TG",
+    "do_selfcal"             : true
+  },
+  "write_results": {
+    "Lo_dropout"             : "",
+    "Lo_datacolumn"          : "data",
+    "Lo_useflags"            : true,
+    "Lo_spws"                : ["3"],
+    "Lo_threshold"           : 0.5,
+    "Lo_min_scans"           : ""
+  }
+}
