@@ -1,63 +1,99 @@
 {
   "global": {
     "imaging_context"        : "ng",
-    "project"                : "RASCIL"
+    "project"                : "RASCIL",
+    "cmap"                   : "rainbow",
+    "ms_list"                : 1,
+    "ms_load"                : 1,
+    "plot_vis"               : 1,
+    "flag"                   : 1,
+    "average_channels"       : 1,
+    "combine_spw"            : 1,
+    "get_advice"             : 1,
+    "convert_stokesI"        : 1,
+    "create_images"          : 1,
+    "weight"                 : 1,
+    "cip"                    : 1,
+    "ical"                   : 1,
+    "save_calibrated"        : 1
+  },
+  "list_ms": {
+    "verbose"                 : true
+  },
+  "load_ms": {
+    "verbose"                 : false,
+    "data_column"             : "CORRECTED_DATA",
+    "sources"                 : ["1252+5634"],
+    "dds"                     : [0, 1, 2, 3]
   },
   "flag": {
     "strategy"                : "eMERLIN_strategy.rfis"
   },
+  "plot_vis": {
+    "verbose"                 : true
+  },
   "average_channels": {
-    "across_spw"              : false
+    "verbose"                 : true
+  },
+  "combine_spw": {
+    "verbose"                 : true
+  },
+  "convert_stokesI": {
+    "verbose"                 : true
   },
   "get_advice": {
+    "verbose"                  : true,
     "guard_band_image"         : 6.0,
     "delA"                     : 0.02,
     "oversampling_synthesised_beam" : 3.0,
     "wprojection_planes"       : 1
   },
   "weight": {
-    "algorithm"               : "uniform"
+    "algorithm"               : "uniform",
+    "robustness"              : 0.0
   },
   "create_images":  {
-    "npixel":                 2048
+    "verbose"                 : true,
+    "npixel"                  : 256,
+    "cellsize"                : 9e-08
   },
   "cip": {
     "nmajor"                 : 5,
-    "niter"                  : 1000,
-    "algorithm"              : "msclean",
+    "niter"                  : 100,
+    "algorithm"              : "mmclean",
+    "nmoment"                : 1,
     "gain"                   : 0.1,
     "scales"                 : [0, 3, 10],
-    "threshold"              : 0.0001,
-    "fractional_threshold"   : 0.1,
-    "window_shaper"          : "quarter",
+    "threshold"              : 0.01,
+    "fractional_threshold"   : 0.3,
+    "window_shape"           : "quarter",
     "do_wstacking"           : false
   },
   "ical": {
-    "nmajor"                 : 5,
-    "niter"                  : 1000,
-    "algorithm"              : "msclean",
+    "nmajor"                 : 6,
+    "niter"                  : 100,
+    "algorithm"              : "mmclean",
+    "nmoment"                : 1,
     "gain"                   : 0.1,
     "scales"                 : [0, 3, 10],
-    "threshold"              : 0.0001,
-    "fractional_threshold"   : 0.1,
-    "window_shaper"          : "quarter",
-    "do_wstacking"           : true,
+    "threshold"              : 0.003,
+    "fractional_threshold"   : 0.3,
+    "window_shape"           : "quarter",
+    "do_wstacking"           : false,
     "T_first_selfcal"        : 1,
     "T_phase_only"           : true,
     "T_timeslice"            : "auto",
-    "G_first_selfcal"        : 1,
-    "G_phase_only"           : true,
-    "G_timeslice"            : "auto",
+    "G_first_selfcal"        : 3,
+    "G_phase_only"           : false,
+    "G_timeslice"            : 120.0,
     "global"                 : false,
     "calibration_context"    : "TG",
     "do_selfcal"             : true
   },
   "write_results": {
-    "Lo_dropout"             : "",
-    "Lo_datacolumn"          : "data",
-    "Lo_useflags"            : true,
-    "Lo_spws"                : ["3"],
-    "Lo_threshold"           : 0.5,
-    "Lo_min_scans"           : ""
+    "verbose"                : true
+  },
+  "save_calibrated": {
+    "verbose"                : true
   }
 }

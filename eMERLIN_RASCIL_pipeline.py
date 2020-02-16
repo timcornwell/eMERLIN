@@ -2,21 +2,19 @@
 
 """
 
-import logging
-import io
-import os
-import sys
-import collections
-import time
 import argparse
 import json
+import os
+import sys
+import time
 
-from erp.pipelines.support import start_eMRP_dict, list_steps, read_inputs, \
-    find_run_steps, get_pipeline_version, \
-    get_defaults, load_obj, save_obj, exit_pipeline
 from erp.pipelines.imaging_steps import *
+from erp.pipelines.support import start_eMRP_dict, list_steps, read_inputs, \
+    find_run_steps, get_pipeline_version, get_logger, \
+    get_defaults, save_obj, exit_pipeline
 
 current_version = "0.0.1"
+
 
 def run_pipeline(inputs_file='./inputs.ini',
                  run_steps=[], skip_steps=[]):
@@ -33,6 +31,12 @@ def run_pipeline(inputs_file='./inputs.ini',
     except:
         branch, short_commit = 'unknown', 'unknown'
     pipeline_version = current_version
+    
+    logger = get_logger()
+    
+    start_epoch = time.asctime()
+    logger.info(
+        "eMERLIN RASCIL imaging pipeline, started at  %s" % start_epoch)
     
     logger.info('Starting pipeline')
     logger.info('Running pipeline from:')
@@ -64,54 +68,65 @@ def run_pipeline(inputs_file='./inputs.ini',
     # Steps to run:
     eMRP['input_steps'] = find_run_steps(eMRP, run_steps, skip_steps)
     
-    ##################################
-    ###  LOAD AND PREPROCESS DATA  ###
-    ##################################
-    
     ## Pipeline processes, inputs are read from the inputs dictionary
-    
-    steps = list_steps()
     
     eMRP = get_defaults(eMRP, pipeline_path='\.')
     
-    bvis_list = load_ms(eMRP)
+    bvis_list = None
     
-    if steps['flag']:
+    if eMRP['input_steps']['ms_list'] > 0:
+        ms_list(eMRP)
+    
+    if eMRP['input_steps']['ms_load'] > 0:
+        bvis_list = ms_load(eMRP)
+    
+    if eMRP['input_steps']['flag'] > 0:
         bvis_list = flag(bvis_list, eMRP)
     
-    if steps['average_channels']:
+    if eMRP['input_steps']['plot_vis'] > 0:
+        plot_vis(bvis_list, eMRP)
+    
+    if eMRP['input_steps']['average_channels'] > 0:
         bvis_list = average_channels(bvis_list, eMRP)
     
-    if steps['get_advice']:
+    if eMRP['input_steps']['combine_spw'] > 0:
+        bvis_list = combine_spw(bvis_list, eMRP)
+    
+    if eMRP['input_steps']['convert_stokesI'] > 0:
+        bvis_list = convert_stokesI(bvis_list, eMRP)
+    
+    if eMRP['input_steps']['get_advice'] > 0:
         advice = get_advice(bvis_list, eMRP)
+        logger.info(advice)
     
     model_list = list()
-    if steps['create_images']:
+    if eMRP['input_steps']['create_images'] > 0:
         model_list = create_images(bvis_list, eMRP)
     
-    if steps['weight']:
+    if eMRP['input_steps']['weight'] > 0:
         bvis_list = weight(bvis_list, model_list, eMRP)
     
-    if steps['cip']:
+    if eMRP['input_steps']['cip'] > 0:
         results = cip(bvis_list, model_list, eMRP)
-        write_results(eMRP, bvis_list, 'cip', results)
+        if eMRP['input_steps']['write_results'] > 0:
+            write_results(eMRP, bvis_list, 'cip', results)
     
-    if steps['ical']:
+    if eMRP['input_steps']['ical'] > 0:
         results = ical(bvis_list, model_list, eMRP)
-        write_results(eMRP, bvis_list, 'ical', results)
+        if eMRP['input_steps']['write_results'] > 0:
+            write_results(eMRP, bvis_list, 'ical', results)
+        if eMRP['input_steps']['save_calibrated'] > 0:
+            save_calibrated(results[3], bvis_list, eMRP)
     
     # Keep important files
-    save_obj(eMRP, info_dir + 'eMRP_info.pkl')
-    os.system('cp eMRP.log {}eMRP.log.txt'.format(info_dir))
-    os.system('cp casa_eMRP.log {}casa_eMRP.log.txt'.format(info_dir))
+    # save_obj(eMRP, info_dir + 'eMRP_info.pkl')
+    # os.system('cp eMRP.log {}eMRP.log.txt'.format(info_dir))
     
-    try:
-        os.system('mv casa-*.log *.last ./logs')
-        logger.info('Moved casa-*.log *.last to ./logs')
-    except:
-        pass
-    logger.info('Pipeline finished')
-    logger.info('#################')
+    stop_epoch = time.asctime()
+    logger.info(
+        "eMERLIN RASCIL imaging pipeline, started at  %s" % start_epoch)
+    logger.info(
+        "eMERLIN RASCIL imaging pipeline, finished at %s" % stop_epoch)
     
     return eMRP
 
@@ -141,22 +156,9 @@ def get_args():
     parser.add_argument('-c', help='Ignore, needed for casa')
     args = parser.parse_args()
     return args
-    
+
+
 if __name__ == "__main__":
-    
-    cwd = os.getcwd()
-    
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    logger.addHandler(logging.FileHandler('%s/eMERLIN_test.log' % cwd))
-    
-    logging.basicConfig(filename='%s/eMERLIN_test.log' % cwd,
-                        filemode='w',
-                        format='%(date)s %(asctime)s.%(msecs)d %(name)s %(levelname)s %(message)s',
-                        datefmt='%H:%M:%S',
-                        level=logging.DEBUG)
-    
-    logger.info("Logging to %s/eMERLIN_test.log" % cwd)
     
     try:
         pipeline_filename = sys.argv[sys.argv.index('-c') + 1]
@@ -175,9 +177,6 @@ if __name__ == "__main__":
     if args.list_steps:
         list_steps()
     else:
-        # Setup logger
         run_pipeline(inputs_file=args.inputs_file,
                      run_steps=args.run_steps,
                      skip_steps=args.skip_steps)
-
-

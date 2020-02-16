@@ -1,18 +1,18 @@
-"""
+"""Functions needed for RASCIL pipeline
 
 """
-import os
-import sys
 import collections
 import configparser
-from ast import literal_eval
-import shutil
-import pickle
 import json
+import os
+import pickle
+import shutil
+import sys
 import time
-
+from ast import literal_eval
 import logging
-logger = logging.getLogger(__file__)
+
+logger = logging.getLogger('logger')
 
 def makedir(pathdir):
     try:
@@ -22,7 +22,8 @@ def makedir(pathdir):
         logger.debug('Cannot create directory: {}'.format(pathdir))
         pass
 
-def rmdir(pathdir,message='Deleted:'):
+
+def rmdir(pathdir, message='Deleted:'):
     if os.path.exists(pathdir):
         try:
             shutil.rmtree(pathdir)
@@ -31,7 +32,8 @@ def rmdir(pathdir,message='Deleted:'):
             logger.debug('Could not delete: {0} {1}'.format(message, pathdir))
             pass
 
-def rmfile(pathdir,message='Deleted:'):
+
+def rmfile(pathdir, message='Deleted:'):
     if os.path.exists(pathdir):
         try:
             os.remove(pathdir)
@@ -39,6 +41,7 @@ def rmfile(pathdir,message='Deleted:'):
         except:
             logger.debug('Could not delete: {0} {1}'.format(message, pathdir))
             pass
+
 
 def mvdir(pathdir, outpudir):
     if os.path.exists(pathdir):
@@ -55,10 +58,13 @@ def exit_pipeline(eMRP='', info_dir='./'):
     logger.info('Now quitting')
     sys.exit()
 
+
 def get_pipeline_version(pipeline_path):
     headfile = pipeline_path + '.git/HEAD'
     branch = open(headfile, 'rb').readlines()[0].strip().split('/')[-1]
-    commit = open(pipeline_path + '.git/refs/heads/'+branch, 'rb').readlines()[0].strip()
+    commit = \
+    open(pipeline_path + '.git/refs/heads/' + branch, 'rb').readlines()[
+        0].strip()
     short_commit = commit[:7]
     return branch, short_commit
 
@@ -71,7 +77,7 @@ def read_inputs(inputs_file):
     config_raw.read(inputs_file)
     config = config_raw._sections
     for key in config.keys():
-        #config[key].pop('__name__')
+        # config[key].pop('__name__')
         for key2 in config[key].keys():
             try:
                 config[key][key2] = literal_eval(config[key][key2])
@@ -84,40 +90,41 @@ def read_inputs(inputs_file):
         logger.info('{0:10s}: {1}'.format(key, value))
     return config['inputs']
 
+
 def find_run_steps(eMRP, run_steps, skip_steps=[]):
     if run_steps == '': run_steps = []
     if skip_steps == '': skip_steps = []
     logger.info('Step selection')
     logger.info('run_steps : {}'.format(run_steps))
     logger.info('skip_steps: {}'.format(skip_steps))
-
+    
     all_steps = list_of_steps()
-
+    
     # Populate list of steps selected
     step_list = []
     if 'all' in run_steps:
         step_list += all_steps
         run_steps.remove('all')
     step_list += run_steps
-
+    
     # Check if all are valid steps:
     wrong_steps = [s for s in step_list if s not in all_steps]
     if wrong_steps != []:
         ws = ', '.join(wrong_steps)
         logger.critical('Not available step(s) to run: {0}'.format(ws))
         exit_pipeline(eMRP='')
-
+    
     wrong_steps = [s for s in skip_steps if s not in all_steps]
     if wrong_steps != []:
         ws = ', '.join(wrong_steps)
         logger.critical('Not available step(s) to skip: {0}'.format(ws))
         exit_pipeline(eMRP='')
-
+    
     # Remove skipped steps:
     for skip_step in skip_steps:
         if skip_step != '':
             step_list.remove(skip_step)
-
+    
     # Define final step dictionary:
     logger.info('Sorted list of steps to execute:')
     input_steps = collections.OrderedDict()
@@ -130,23 +137,27 @@ def find_run_steps(eMRP, run_steps, skip_steps=[]):
             input_steps[s] = 0
         else:
             pass
-
+    
     return input_steps
 
 
 def info_start_steps():
     default_value = [0, 0, '']
-    all_steps = list_of_steps()[0]
-
+    all_steps = list_of_steps()
+    
     steps = collections.OrderedDict()
     steps['start_pipeline'] = default_value
     for s in all_steps:
         steps[s] = default_value
     return steps
 
+
 def list_of_steps():
-    imaging_steps = ["load_ms", "flag", "average_channels", "get_advice",
-           "create_images", "weight", "cip", "ical", "write_results"]
+    imaging_steps = ["ms_list", "ms_load", "plot_vis", "flag",
+                     "average_channels",
+                     "combine_spw", "get_advice", "convert_stokesI",
+                     "create_images", "weight", "cip", "ical",
+                     "write_results", "save_calibrated"]
     
     return imaging_steps
 
@@ -164,31 +175,30 @@ def start_eMRP_dict(info_dir='./'):
         eMRP = load_obj(info_dir + 'eMRP_info.pkl')
     except:
         eMRP = collections.OrderedDict()
-        #eMRP['steps'] = em.eMRP_info_start_steps()
-        #eMRP['img_stats'] = collections.OrderedDict()
+        eMRP['steps'] = info_start_steps()
+        eMRP['img_stats'] = collections.OrderedDict()
     return eMRP
 
-def get_logger(
-        LOG_FORMAT     = '%(asctime)s | %(levelname)s | %(message)s',
-        DATE_FORMAT    = '%Y-%m-%d %H:%M:%S',
-        LOG_NAME       = 'logger',
-        LOG_FILE_INFO  = 'eMRP.log'):
 
-    log           = logging.getLogger(LOG_NAME)
+def get_logger(LOG_FORMAT='%(asctime)s | %(levelname)s | %(message)s',
+               DATE_FORMAT='%Y-%m-%d %H:%M:%S',
+               LOG_NAME='logger',
+               LOG_FILE_INFO='eMRP.log'):
+    log = logging.getLogger(LOG_NAME)
     log_formatter = logging.Formatter(fmt=LOG_FORMAT, datefmt=DATE_FORMAT)
     logging.Formatter.converter = time.gmtime
-
+    
     # comment this to suppress console output
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(log_formatter)
     log.addHandler(stream_handler)
-
+    
     # eMRP.log with pipeline log
     file_handler_info = logging.FileHandler(LOG_FILE_INFO, mode='a')
     file_handler_info.setFormatter(log_formatter)
-    file_handler_info.setLevel(logging.INFO)
+    file_handler_info.setLevel(logging.DEBUG)
     log.addHandler(file_handler_info)
-
+    
     log.setLevel(logging.INFO)
     return log
 

@@ -137,3 +137,5 @@ dask-worker-space
 *.fits
 
 *.pkl
+
+data/
