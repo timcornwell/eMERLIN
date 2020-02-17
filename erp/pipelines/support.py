@@ -153,12 +153,8 @@ def info_start_steps():
 
 
 def list_of_steps():
-    imaging_steps = ["ms_list", "ms_load", "plot_vis", "flag",
-                     "average_channels",
-                     "combine_spw", "get_advice", "convert_stokesI",
-                     "create_images", "weight", "cip", "ical",
-                     "write_results", "save_calibrated"]
-    
+    import erp.pipelines.imaging_steps as imsteps
+    imaging_steps = imsteps.__all__
     return imaging_steps
 
 

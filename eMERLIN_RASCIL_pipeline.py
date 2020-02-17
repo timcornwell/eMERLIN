@@ -72,6 +72,8 @@ def run_pipeline(inputs_file='./inputs.ini',
     
     eMRP = get_defaults(eMRP, pipeline_path='\.')
     
+    pipeline_init(eMRP, get_logger=get_logger)
+    
     bvis_list = None
     
     if eMRP['input_steps']['ms_list'] > 0:
@@ -108,15 +110,19 @@ def run_pipeline(inputs_file='./inputs.ini',
     
     if eMRP['input_steps']['cip'] > 0:
         results = cip(bvis_list, model_list, eMRP)
-        if eMRP['input_steps']['write_results'] > 0:
-            write_results(eMRP, bvis_list, 'cip', results)
+        if eMRP['input_steps']['write_images'] > 0:
+            write_images(eMRP, bvis_list, 'cip', results)
     
     if eMRP['input_steps']['ical'] > 0:
         results = ical(bvis_list, model_list, eMRP)
-        if eMRP['input_steps']['write_results'] > 0:
-            write_results(eMRP, bvis_list, 'ical', results)
-        if eMRP['input_steps']['save_calibrated'] > 0:
-            save_calibrated(results[3], bvis_list, eMRP)
+        if eMRP['input_steps']['write_images'] > 0:
+            write_images(eMRP, bvis_list, 'ical', results[0:3])
+        if eMRP['input_steps']['write_gaintables'] > 0:
+            write_gaintables(eMRP, bvis_list, 'ical', results[3])
+        if eMRP['input_steps']['ms_save'] > 0:
+            apply_calibration(results[3], bvis_list, eMRP)
+        if eMRP['input_steps']['ms_save'] > 0:
+            ms_save(bvis_list, eMRP)
     
     # Keep important files
     # save_obj(eMRP, info_dir + 'eMRP_info.pkl')
