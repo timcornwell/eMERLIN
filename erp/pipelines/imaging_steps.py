@@ -52,7 +52,8 @@ def pipeline_init(eMRP, get_logger):
     """
     if eMRP['defaults']['global']['distributed']:
         log.info("Distributed processing using Dask")
-        rsexecute.set_client(use_dask=True)
+        rsexecute.set_client(use_dask=True,
+                             nworkers=eMRP['defaults']['global']['nworkers'])
         rsexecute.run(get_logger)
     else:
         log.info("Serial processing")
@@ -412,6 +413,38 @@ def write_images(eMRP, bvis_list, mode, results):
                 mim.data /= float(nchannels)
                 write_image(mim, origin + "_moment", imim)
     
+    else:
+        for iorigin, _ in enumerate(results):
+            origin = origins[iorigin]
+            for ivis, bvis in enumerate(bvis_list):
+                result = results[iorigin][ivis]
+                if origin == "residual":
+                    result = result[0]
+                if isinstance(result, Image):
+                    write_image(result, origin, ivis)
+
+    if eMRP["defaults"]["write_images"]["write_moments"]:
+        for iorigin, _ in enumerate(results):
+            origin = origins[iorigin]
+            channel_image_list = list()
+            for ivis, bvis in enumerate(bvis_list):
+                result = results[iorigin][ivis]
+                if origin == "residual":
+                    channel_image_list.append(result[0])
+                else:
+                    channel_image_list.append(result)
+            channel_image = image_gather_channels(channel_image_list)
+            nchannels = len(channel_image_list)
+            moment_image = \
+                calculate_image_frequency_moments(channel_image)
+            moment_image_list = \
+                image_scatter_channels(moment_image,
+                                       eMRP["defaults"]["write_images"]
+                                       ["number_moments"])
+            for imim, mim in enumerate(moment_image_list):
+                mim.data /= float(nchannels)
+                write_image(mim, origin+"_moment", imim)
+
     else:
         for iorigin, _ in enumerate(results):
             origin = origins[iorigin]

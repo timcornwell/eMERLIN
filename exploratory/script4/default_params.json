@@ -1,6 +1,7 @@
 {
   "global": {
     "distributed"            : true,
+    "nworkers"               : 16,
     "imaging_context"        : "ng",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",

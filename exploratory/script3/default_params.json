@@ -15,7 +15,9 @@
     "weight"                 : 1,
     "cip"                    : 1,
     "ical"                   : 1,
-    "save_calibrated"        : 1
+    "write_results"          : 1,
+    "apply_calibration"      : 1,
+    "ms_save"                : 1
   },
   "list_ms": {
     "verbose"                 : true
@@ -58,7 +60,7 @@
     "cellsize"                : 9e-08
   },
   "cip": {
-    "nmajor"                 : 5,
+    "nmajor"                 : 6,
     "niter"                  : 100,
     "algorithm"              : "mmclean",
     "nmoment"                : 1,
@@ -93,7 +95,10 @@
   "write_results": {
     "verbose"                : true
   },
-  "save_calibrated": {
+  "apply_calibration": {
+    "verbose"                : true
+  },
+  "ms_save": {
     "verbose"                : true
   }
 }
