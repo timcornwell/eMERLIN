@@ -99,7 +99,6 @@ def run_pipeline(inputs_file='./inputs.ini',
     
     if eMRP['input_steps']['get_advice'] > 0:
         advice = get_advice(bvis_list, eMRP)
-        logger.info(advice)
     
     model_list = list()
     if eMRP['input_steps']['create_images'] > 0:

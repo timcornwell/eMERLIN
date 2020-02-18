@@ -28,8 +28,9 @@ import numpy
 from rascil.data_models import Image
 from rascil.processing_components import show_image, qa_image, \
     export_image_to_fits, calculate_image_frequency_moments, \
-    image_gather_channels, qa_gaintable, create_blockvisibility_from_ms, \
-    integrate_visibility_by_channel, convert_blockvisibility_to_stokesI, \
+    image_gather_channels, image_scatter_channels, \
+    qa_gaintable, create_blockvisibility_from_ms, \
+    average_blockvisibility_by_channel, convert_blockvisibility_to_stokesI, \
     convert_blockvisibility_to_visibility, \
     convert_visibility_to_blockvisibility, \
     weight_visibility, create_image_from_visibility, \
@@ -42,6 +43,7 @@ from rascil.workflows import continuum_imaging_list_rsexecute_workflow, \
 from rascil.workflows.rsexecute.execution_support import rsexecute
 
 log = logging.getLogger('logger')
+
 
 def pipeline_init(eMRP, get_logger):
     """ Initialise the pipeline: do we want to use dask?
@@ -171,12 +173,17 @@ def average_channels(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
-    log.info("Averaging within spectral windows")
-    avis_list = [integrate_visibility_by_channel(bvis) for bvis in bvis_list]
-    if eMRP['defaults']['average_channels']['verbose']:
+    nchan = eMRP['defaults']["average_channels"]["nchan"]
+    log.info("Averaging by {} within spectral windows".format(nchan))
+    average_vis_list = list()
+    for bvis in bvis_list:
+        avis_list = \
+            average_blockvisibility_by_channel(bvis,
+                                          eMRP['defaults']["average_channels"][
+                                              "nchan"])
         for avis in avis_list:
-            log.info(str(avis))
-    return avis_list
+            average_vis_list.append(avis)
+    return average_vis_list
 
 
 def combine_spw(bvis_list, eMRP):
@@ -192,6 +199,7 @@ def combine_spw(bvis_list, eMRP):
         for cvis in cvis_list:
             log.info(str(cvis))
     return cvis_list
+
 
 def get_advice(bvis_list, eMRP):
     """ Get advice on imaging parameters
@@ -322,7 +330,7 @@ def ical(bvis_list, model_list, eMRP):
     controls['B']['first_selfcal'] = eMRP['defaults']["ical"]["B_first_selfcal"]
     controls['B']['phase_only'] = eMRP['defaults']["ical"]["B_phase_only"]
     controls['B']['timeslice'] = eMRP['defaults']["ical"]["B_timeslice"]
-
+    
     for bvis, model in zip(bvis_list, model_list):
         log.info("Processing {source:s} via ICAL pipeline".format(
             source=bvis.source))
@@ -347,8 +355,9 @@ def ical(bvis_list, model_list, eMRP):
         global_solution=eMRP['defaults']['ical']['global_solution'],
         controls=controls)
     results = rsexecute.compute(results, sync=True)
-
+    
     return results
+
 
 def write_images(eMRP, bvis_list, mode, results):
     """ Plot and save the images
@@ -373,21 +382,45 @@ def write_images(eMRP, bvis_list, mode, results):
         plt.clf()
         show_image(im, title="{0} image".format(filename_root),
                    cm=eMRP["defaults"]["global"]["cmap"])
-        plotfile="{0}_{1}.png".format(filename_root, ivis)
+        plotfile = "{0}_{1}.png".format(filename_root, ivis)
         plt.savefig(plotfile)
         plt.show(block=False)
         filename = "{root:s}_{ivis}.fits".format(root=filename_root,
                                                  ivis=ivis)
         export_image_to_fits(im, filename)
     
-    for iorigin, _ in enumerate(results):
-        origin = origins[iorigin]
-        for ivis, bvis in enumerate(bvis_list):
-            result = results[iorigin][ivis]
-            if origin == "residual":
-                result = result[0]
-            if isinstance(result, Image):
-                write_image(result, origin, ivis)
+    if eMRP["defaults"]["write_images"]["write_moments"]:
+        for iorigin, _ in enumerate(results):
+            origin = origins[iorigin]
+            channel_image_list = list()
+            for ivis, bvis in enumerate(bvis_list):
+                result = results[iorigin][ivis]
+                if origin == "residual":
+                    channel_image_list.append(result[0])
+                else:
+                    channel_image_list.append(result)
+            channel_image = image_gather_channels(channel_image_list)
+            nchannels = len(channel_image_list)
+            moment_image = \
+                calculate_image_frequency_moments(channel_image,
+                                                  nmoment=eMRP["defaults"]
+                                                  ["write_images"]
+                                                  ["number_moments"])
+            moment_image_list = \
+                image_scatter_channels(moment_image)
+            for imim, mim in enumerate(moment_image_list):
+                mim.data /= float(nchannels)
+                write_image(mim, origin + "_moment", imim)
+    
+    else:
+        for iorigin, _ in enumerate(results):
+            origin = origins[iorigin]
+            for ivis, bvis in enumerate(bvis_list):
+                result = results[iorigin][ivis]
+                if origin == "residual":
+                    result = result[0]
+                if isinstance(result, Image):
+                    write_image(result, origin, ivis)
 
 
 def write_gaintables(eMRP, bvis_list, mode, gt_list):
@@ -399,7 +432,7 @@ def write_gaintables(eMRP, bvis_list, mode, gt_list):
     :param results:
     :return:
     """
-
+    
     for igt, gt in enumerate(gt_list):
         for cc in eMRP['defaults']['ical']['calibration_context']:
             filename_root = \

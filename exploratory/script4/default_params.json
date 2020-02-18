@@ -37,7 +37,8 @@
     "verbose"                 : true
   },
   "average_channels": {
-    "verbose"                 : true
+    "verbose"                 : true,
+    "nchan"                   : 32
   },
   "combine_spw": {
     "verbose"                 : true
@@ -47,7 +48,7 @@
   },
   "get_advice": {
     "verbose"                  : true,
-    "guard_band_image"         : 6.0,
+    "guard_band_image"         : 0.01,
     "delA"                     : 0.02,
     "oversampling_synthesised_beam" : 3.0,
     "wprojection_planes"       : 1
@@ -75,7 +76,7 @@
     "do_wstacking"           : false
   },
   "ical": {
-    "nmajor"                 : 3,
+    "nmajor"                 : 8,
     "niter"                  : 100,
     "algorithm"              : "mmclean",
     "nmoment"                : 1,
@@ -84,7 +85,6 @@
     "threshold"              : 0.003,
     "fractional_threshold"   : 0.3,
     "window_shape"           : "quarter",
-    "return_moments"         : true,
     "do_wstacking"           : false,
     "T_first_selfcal"        : 2,
     "T_phase_only"           : true,
@@ -100,8 +100,9 @@
     "do_selfcal"             : true
   },
   "write_images": {
-    "write_moments": true,
-    "verbose": true
+    "write_moments"          : true,
+    "number_moments"         : 4,
+    "verbose"                : true
   },
   "write_gaintables": {
     "verbose"                : true

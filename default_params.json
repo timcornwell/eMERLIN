@@ -1,7 +1,16 @@
 {
   "global": {
     "imaging_context"        : "ng",
-    "project"                : "RASCIL"
+    "project"                : "RASCIL",
+    "load_ms"                : 1,
+    "flag"                   : 1,
+    "average_channels"       : 1,
+    "get_advice"             : 1,
+    "create_images"          : 1,
+    "weight"                 : 1,
+    "cip"                    : 1,
+    "ical"                   : 1,
+    "write_results"          : 1
   },
   "load_ms": {
     "verbose"                 : true
@@ -19,10 +28,11 @@
     "wprojection_planes"       : 1
   },
   "weight": {
-    "algorithm"               : "uniform"
+    "algorithm"               : "uniform",
+    "robustness"              : 0.0
   },
   "create_images":  {
-    "npixel":                 2048
+    "npixel"                 : 1024
   },
   "cip": {
     "nmajor"                 : 5,
@@ -56,11 +66,6 @@
     "do_selfcal"             : true
   },
   "write_results": {
-    "Lo_dropout"             : "",
-    "Lo_datacolumn"          : "data",
-    "Lo_useflags"            : true,
-    "Lo_spws"                : ["3"],
-    "Lo_threshold"           : 0.5,
-    "Lo_min_scans"           : ""
+    "verbose"                : true
   }
 }
