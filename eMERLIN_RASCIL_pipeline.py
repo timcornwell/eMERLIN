@@ -72,7 +72,7 @@ def run_pipeline(inputs_file='./inputs.ini',
     
     eMRP = get_defaults(eMRP, pipeline_path='\.')
     
-    pipeline_init(eMRP, get_logger=get_logger)
+    initialize_pipeline(eMRP, get_logger=get_logger)
     
     bvis_list = None
     
@@ -126,6 +126,8 @@ def run_pipeline(inputs_file='./inputs.ini',
     # Keep important files
     # save_obj(eMRP, info_dir + 'eMRP_info.pkl')
     # os.system('cp eMRP.log {}eMRP.log.txt'.format(info_dir))
+    
+    finalize_pipeline(eMRP)
     
     stop_epoch = time.asctime()
     logger.info(

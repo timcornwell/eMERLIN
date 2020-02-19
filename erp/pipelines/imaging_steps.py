@@ -2,7 +2,7 @@
 Functions used in eMERLIN RASCIL pipelie
 """
 
-__all__ = ["pipeline_init",
+__all__ = ["initialize_pipeline",
            "ms_list",
            "ms_load",
            "flag",
@@ -18,7 +18,8 @@ __all__ = ["pipeline_init",
            "write_images",
            "write_gaintables",
            "apply_calibration",
-           "ms_save"]
+           "ms_save",
+           "finalize_pipeline"]
 
 import logging
 
@@ -31,33 +32,42 @@ from rascil.processing_components import show_image, qa_image, \
     image_gather_channels, image_scatter_channels, \
     qa_gaintable, create_blockvisibility_from_ms, \
     average_blockvisibility_by_channel, convert_blockvisibility_to_stokesI, \
-    convert_blockvisibility_to_visibility, \
-    convert_visibility_to_blockvisibility, \
-    weight_visibility, create_image_from_visibility, \
+    create_image_from_visibility, \
     advise_wide_field, create_calibration_controls, gaintable_plot, \
     list_ms, concatenate_blockvisibility_frequency, \
     plot_uvcoverage, plot_visibility, apply_gaintable, \
     export_blockvisibility_to_ms
 from rascil.workflows import continuum_imaging_list_rsexecute_workflow, \
-    ical_list_rsexecute_workflow
+    ical_list_rsexecute_workflow, weight_list_rsexecute_workflow
 from rascil.workflows.rsexecute.execution_support import rsexecute
 
 log = logging.getLogger('logger')
 
 
-def pipeline_init(eMRP, get_logger):
+def initialize_pipeline(eMRP, get_logger):
     """ Initialise the pipeline: do we want to use dask?
-    
+
     :param eMRP:
     """
     if eMRP['defaults']['global']['distributed']:
         log.info("Distributed processing using Dask")
         rsexecute.set_client(use_dask=True,
-                             nworkers=eMRP['defaults']['global']['nworkers'])
+                             n_workers=eMRP['defaults']['global']['nworkers'])
         rsexecute.run(get_logger)
+        rsexecute.init_statistics()
     else:
         log.info("Serial processing")
         rsexecute.set_client(use_dask=False)
+
+
+def finalize_pipeline(eMRP):
+    """ Initialise the pipeline: do we want to use dask?
+
+    :param eMRP:
+    """
+    if eMRP['defaults']['global']['distributed']:
+        rsexecute.save_statistics('eMERLIN_RASCIL_pipeline')
+        rsexecute.close()
 
 
 def ms_list(eMRP):
@@ -175,13 +185,13 @@ def average_channels(bvis_list, eMRP):
     :return:
     """
     nchan = eMRP['defaults']["average_channels"]["nchan"]
-    log.info("Averaging by {} within spectral windows".format(nchan))
+    log.info("Averaging by {} channels within spectral windows".format(nchan))
     average_vis_list = list()
     for bvis in bvis_list:
         avis_list = \
             average_blockvisibility_by_channel(bvis,
-                                          eMRP['defaults']["average_channels"][
-                                              "nchan"])
+                                               eMRP['defaults']["average_channels"][
+                                                   "nchan"])
         for avis in avis_list:
             average_vis_list.append(avis)
     return average_vis_list
@@ -268,16 +278,15 @@ def weight(bvis_list, model_list, eMRP):
     :param eMRP:
     :return:
     """
-    log.info("Applying {} weighting".format(eMRP['defaults']['weight']
-                                            ['algorithm']))
-    new_bvis_list = list()
-    for bvis, model in zip(bvis_list, model_list):
-        cvis = convert_blockvisibility_to_visibility(bvis)
-        cvis = weight_visibility(cvis, model,
-                                 weighting=eMRP['defaults']['weight']
-                                 ['algorithm'])
-        new_bvis_list.append(convert_visibility_to_blockvisibility(cvis))
-    return bvis_list
+    log.info("Applying {} weighting".format(eMRP['defaults']['weight']['algorithm']))
+    
+    scattered_bvis_list = rsexecute.scatter(bvis_list)
+    scattered_model_list = rsexecute.scatter(model_list)
+    
+    results = weight_list_rsexecute_workflow(scattered_bvis_list, scattered_model_list,
+                                             cweighting=eMRP['defaults']['weight']['algorithm'])
+    
+    return rsexecute.compute(results, sync=True)
 
 
 def cip(bvis_list, model_list, eMRP):
@@ -422,7 +431,7 @@ def write_images(eMRP, bvis_list, mode, results):
                     result = result[0]
                 if isinstance(result, Image):
                     write_image(result, origin, ivis)
-
+    
     if eMRP["defaults"]["write_images"]["write_moments"]:
         for iorigin, _ in enumerate(results):
             origin = origins[iorigin]
@@ -443,8 +452,8 @@ def write_images(eMRP, bvis_list, mode, results):
                                        ["number_moments"])
             for imim, mim in enumerate(moment_image_list):
                 mim.data /= float(nchannels)
-                write_image(mim, origin+"_moment", imim)
-
+                write_image(mim, origin + "_moment", imim)
+    
     else:
         for iorigin, _ in enumerate(results):
             origin = origins[iorigin]
