@@ -297,9 +297,7 @@ def cip(bvis_list, model_list, eMRP):
     :param eMRP:
     :return:
     """
-    for bvis, model in zip(bvis_list, model_list):
-        log.info("Processing {source:s} via continuum imaging pipeline".format(
-            source=bvis.source))
+    log.info("Processing with RASCIL continuum imaging pipeline")
     
     scattered_bvis_list = rsexecute.scatter(bvis_list)
     scattered_model_list = rsexecute.scatter(model_list)
@@ -341,9 +339,7 @@ def ical(bvis_list, model_list, eMRP):
     controls['B']['phase_only'] = eMRP['defaults']["ical"]["B_phase_only"]
     controls['B']['timeslice'] = eMRP['defaults']["ical"]["B_timeslice"]
     
-    for bvis, model in zip(bvis_list, model_list):
-        log.info("Processing {source:s} via ICAL pipeline".format(
-            source=bvis.source))
+    log.info("Processing with RASCIL ICAL pipeline")
     
     scattered_bvis_list = rsexecute.scatter(bvis_list)
     scattered_model_list = rsexecute.scatter(model_list)
