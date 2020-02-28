@@ -54,7 +54,7 @@ def mvdir(pathdir, outpudir):
 
 
 def exit_pipeline(eMRP='', info_dir='./'):
-    os.system('cp eMRP.log {}eMRP.log.txt'.format(info_dir))
+    #os.system('cp eMRP.log {}eMRP.log.txt'.format(info_dir))
     logger.info('Now quitting')
     sys.exit()
 

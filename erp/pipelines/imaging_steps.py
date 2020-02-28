@@ -3,8 +3,8 @@ Functions used in eMERLIN RASCIL pipelie
 """
 
 __all__ = ["initialize_pipeline",
-           "ms_list",
-           "ms_load",
+           "list_ms",
+           "load_ms",
            "flag",
            "plot_vis",
            "average_channels",
@@ -18,7 +18,7 @@ __all__ = ["initialize_pipeline",
            "write_images",
            "write_gaintables",
            "apply_calibration",
-           "ms_save",
+           "save_ms",
            "finalize_pipeline"]
 
 import logging
@@ -34,9 +34,10 @@ from rascil.processing_components import show_image, qa_image, \
     average_blockvisibility_by_channel, convert_blockvisibility_to_stokesI, \
     create_image_from_visibility, \
     advise_wide_field, create_calibration_controls, gaintable_plot, \
-    list_ms, concatenate_blockvisibility_frequency, \
+    concatenate_blockvisibility_frequency, \
     plot_uvcoverage, plot_visibility, apply_gaintable, \
     export_blockvisibility_to_ms
+from rascil.processing_components.visibility import list_ms as rascil_list_ms
 from rascil.workflows import continuum_imaging_list_rsexecute_workflow, \
     ical_list_rsexecute_workflow, weight_list_rsexecute_workflow
 from rascil.workflows.rsexecute.execution_support import rsexecute
@@ -70,40 +71,46 @@ def finalize_pipeline(eMRP):
         rsexecute.close()
 
 
-def ms_list(eMRP):
+def list_ms(eMRP):
     """ List the contents of MeasurementSet
     
     :param eMRP:
     :return:
     """
     log.info("Listing Measurement Set {0}".format(eMRP['inputs']['ms_path']))
-    sources, dds = list_ms(eMRP['inputs']['ms_path'])
+    sources, dds = rascil_list_ms(eMRP['inputs']['ms_path'])
     log.info("MS contains sources {}".format(sources))
     log.info("MS contains data descriptors {}".format(dds))
     return sources, dds
 
 
-def ms_load(eMRP):
+def load_ms(eMRP):
     """ Load the MeasurementSet into a list of BlockVis
     
+    This is run serially because the multiple MS readers does not appear to work.
+    
     :param eMRP:
-    :return:
+    :return: list of BlockVisibilities
     """
     log.info("Loading Measurement Set {0}".format(eMRP['inputs']['ms_path']))
-    bvis_list = \
-        create_blockvisibility_from_ms(eMRP['inputs']['ms_path'],
-                                       datacolumn=
-                                       eMRP['defaults']['load_ms'][
-                                           'data_column'],
-                                       selected_sources=
-                                       eMRP['defaults']['load_ms']['sources'],
-                                       selected_dds=eMRP['defaults']['load_ms'][
-                                           'dds'])
-    sources = numpy.unique([bv.source for bv in bvis_list])
-    log.info('Loaded sources {}'.format(sources))
-    if eMRP['defaults']['load_ms']['verbose']:
-        for bvis in bvis_list:
-            log.info(str(bvis))
+    
+    def load_and_list(dd):
+        bv = create_blockvisibility_from_ms(eMRP['inputs']['ms_path'],
+                                            datacolumn=eMRP['defaults']['load_ms']['data_column'],
+                                            selected_sources=[eMRP['defaults']['load_ms']['source']],
+                                            selected_dds=[dd])[0]
+        
+        if eMRP['defaults']['load_ms']['verbose']:
+            log.info(str(bv))
+        return bv
+    
+    bvis_list = [rsexecute.execute(load_and_list)(dd) for dd in eMRP['defaults']['load_ms']['dds']]
+    
+    # Put this to the Dask cluster
+    bvis_list = rsexecute.persist(bvis_list)
+    
+    from dask import visualize
+    visualize(bvis_list, filename='load_ms.png')
     return bvis_list
 
 
@@ -165,36 +172,35 @@ def plot_vis(bvis_list, eMRP):
     """
     for bvis in bvis_list:
         plt.clf()
-        plot_uvcoverage([bvis], title='UV Coverage {source:s}'.format(
-            source=bvis.source))
+        plot_uvcoverage([bvis], title='UV Coverage {source:s}'.format(source=bvis.source))
         plt.tight_layout()
         plt.show(block=False)
         plt.clf()
         plot_visibility([bvis],
-                        title='Visibility amplitude {source:s}'.format(
-                            source=bvis.source))
+                        title='Visibility amplitude {source:s}'.format(source=bvis.source))
         plt.tight_layout()
         plt.show(block=False)
 
 
 def average_channels(bvis_list, eMRP):
-    """ Average each BlockVis across frequency
+    """ Average each BlockVis across frequency, producing a new BlockVis for each new channel
     
     :param bvis_list:
     :param eMRP:
-    :return:
+    :return: list of BlockVisibilities
     """
     nchan = eMRP['defaults']["average_channels"]["nchan"]
     log.info("Averaging by {} channels within spectral windows".format(nchan))
-    average_vis_list = list()
-    for bvis in bvis_list:
-        avis_list = \
-            average_blockvisibility_by_channel(bvis,
-                                               eMRP['defaults']["average_channels"][
-                                                   "nchan"])
-        for avis in avis_list:
-            average_vis_list.append(avis)
-    return average_vis_list
+    nout = eMRP['defaults']["average_channels"]["original_nchan"] // \
+           eMRP['defaults']["average_channels"]["nchan"]
+    average_vis_list = [rsexecute.execute(average_blockvisibility_by_channel, nout=nout)
+                        (bvis_list[idd], eMRP['defaults']["average_channels"]["nchan"])
+                        for idd, dd in enumerate(eMRP['defaults']['load_ms']['dds'])]
+    average_vis_list = [item for sublist in average_vis_list for item in sublist]
+
+    bvis_list = rsexecute.persist(average_vis_list)
+
+    return bvis_list
 
 
 def combine_spw(bvis_list, eMRP):
@@ -239,8 +245,10 @@ def convert_stokesI(bvis_list, eMRP):
     :return:
     """
     log.info("Converting to stokesI visibility")
-    return [convert_blockvisibility_to_stokesI(bvis)
-            for bvis in bvis_list]
+    bvis_list = [rsexecute.execute(convert_blockvisibility_to_stokesI)(bvis) for bvis in bvis_list]
+
+    bvis_list = rsexecute.persist(bvis_list)
+    return bvis_list
 
 
 def create_images(bvis_list, eMRP):
@@ -251,22 +259,18 @@ def create_images(bvis_list, eMRP):
     :return:
     """
     log.info("Creating template images")
-    model_list = list()
-    for bvis in bvis_list:
-        frequency = [numpy.mean(bvis.frequency)]
-        channel_bandwidth = [numpy.sum(bvis.channel_bandwidth)]
-        model_list.append(
-            create_image_from_visibility(bvis,
-                                         npixel=eMRP['defaults']
-                                         ["create_images"]["npixel"],
-                                         cellsize=eMRP['defaults']
-                                         ["create_images"]['cellsize'],
-                                         nchan=1,
-                                         frequency=frequency,
-                                         channel_bandwidth=channel_bandwidth))
-    if eMRP['defaults']["create_images"]["verbose"]:
-        for model in model_list:
-            log.info(str(model))
+    model_list = [rsexecute.execute(create_image_from_visibility)
+                  (bvis,
+                   npixel=eMRP['defaults']
+                   ["create_images"]["npixel"],
+                   cellsize=eMRP['defaults']
+                   ["create_images"]['cellsize'],
+                   nchan=1,
+                   frequency=[numpy.mean(bvis.frequency)],
+                   channel_bandwidth=[numpy.sum(bvis.channel_bandwidth)])
+                  for bvis in bvis_list]
+    
+    model_list = rsexecute.persist(model_list)
     return model_list
 
 
@@ -280,13 +284,11 @@ def weight(bvis_list, model_list, eMRP):
     """
     log.info("Applying {} weighting".format(eMRP['defaults']['weight']['algorithm']))
     
-    scattered_bvis_list = rsexecute.scatter(bvis_list)
-    scattered_model_list = rsexecute.scatter(model_list)
+    bvis_list = weight_list_rsexecute_workflow(bvis_list, model_list,
+                                          weighting=eMRP['defaults']['weight']['algorithm'])
     
-    results = weight_list_rsexecute_workflow(scattered_bvis_list, scattered_model_list,
-                                             cweighting=eMRP['defaults']['weight']['algorithm'])
-    
-    return rsexecute.compute(results, sync=True)
+    bvis_list = rsexecute.persist(bvis_list)
+    return bvis_list
 
 
 def cip(bvis_list, model_list, eMRP):
@@ -299,10 +301,8 @@ def cip(bvis_list, model_list, eMRP):
     """
     log.info("Processing with RASCIL continuum imaging pipeline")
     
-    scattered_bvis_list = rsexecute.scatter(bvis_list)
-    scattered_model_list = rsexecute.scatter(model_list)
     results = continuum_imaging_list_rsexecute_workflow(
-        scattered_bvis_list, scattered_model_list,
+        bvis_list, model_list,
         context=eMRP['defaults']['global']['imaging_context'],
         nmajor=eMRP['defaults']['cip']['nmajor'],
         niter=eMRP['defaults']['cip']['niter'],
@@ -314,7 +314,6 @@ def cip(bvis_list, model_list, eMRP):
         threshold=eMRP['defaults']['cip']['threshold'],
         window_shape=eMRP['defaults']['cip']['window_shape'],
         do_wstacking=eMRP['defaults']['cip']['do_wstacking'])
-    results = rsexecute.compute(results, sync=True)
     
     return results
 
@@ -341,10 +340,8 @@ def ical(bvis_list, model_list, eMRP):
     
     log.info("Processing with RASCIL ICAL pipeline")
     
-    scattered_bvis_list = rsexecute.scatter(bvis_list)
-    scattered_model_list = rsexecute.scatter(model_list)
     results = ical_list_rsexecute_workflow(
-        scattered_bvis_list, scattered_model_list,
+        bvis_list, model_list,
         context=eMRP['defaults']['global']['imaging_context'],
         nmajor=eMRP['defaults']['ical']['nmajor'],
         niter=eMRP['defaults']['ical']['niter'],
@@ -359,113 +356,75 @@ def ical(bvis_list, model_list, eMRP):
         do_selfcal=eMRP['defaults']['ical']['do_selfcal'],
         do_wstacking=eMRP['defaults']['ical']['do_wstacking'],
         global_solution=eMRP['defaults']['ical']['global_solution'],
+        tol=eMRP['defaults']['ical']['tol'],
         controls=controls)
-    results = rsexecute.compute(results, sync=True)
     
     return results
 
 
-def write_images(eMRP, bvis_list, mode, results):
+def write_images(eMRP, pipeline, results):
     """ Plot and save the images
 
     :param eMRP:
-    :param bvis_list:
-    :param mode:
+    :param pipeline:
     :param results:
     :return:
     """
     
-    origins = ["deconvolved", "residual", "restored"]
+    im_types = ["deconvolved", "residual", "restored"]
     
-    def write_image(im, origin, ivis):
+    def write_image(im, im_type="restored", index=0, axis='spw'):
         filename_root = \
-            "{project:s}_{source:s}_{origin:s}_{mode}".format(
+            "{project:s}_{source:s}_{pipeline}_{im_type:s}_{axis}{index:d}".format(
                 project=eMRP['defaults']["global"]["project"],
-                source=bvis.source,
-                origin=origin,
-                mode=mode)
+                source=eMRP['defaults']["load_ms"]["source"],
+                im_type=im_type,
+                pipeline=pipeline,
+                axis=axis,
+                index=index)
         log.info(qa_image(im, context=filename_root))
         plt.clf()
-        show_image(im, title="{0} image".format(filename_root),
+        show_image(im, title=filename_root,
                    cm=eMRP["defaults"]["global"]["cmap"])
-        plotfile = "{0}_{1}.png".format(filename_root, ivis)
+        plotfile = "{0}.png".format(filename_root)
         plt.savefig(plotfile)
         plt.show(block=False)
-        filename = "{root:s}_{ivis}.fits".format(root=filename_root,
-                                                 ivis=ivis)
+        filename = "{0}.fits".format(filename_root)
         export_image_to_fits(im, filename)
     
     if eMRP["defaults"]["write_images"]["write_moments"]:
-        for iorigin, _ in enumerate(results):
-            origin = origins[iorigin]
-            channel_image_list = list()
-            for ivis, bvis in enumerate(bvis_list):
-                result = results[iorigin][ivis]
-                if origin == "residual":
-                    channel_image_list.append(result[0])
+        nspw = len(results[0])
+        nmoment = eMRP["defaults"]["write_images"]["number_moments"]
+        log.info("Forming {0} moment images from {1} spws".format(nmoment, nspw))
+        for it, im_type in enumerate(im_types):
+            channel_images = list()
+            for result in results[it]:
+                if im_type == "residual":
+                    channel_images.append(result[0])
                 else:
-                    channel_image_list.append(result)
-            channel_image = image_gather_channels(channel_image_list)
-            nchannels = len(channel_image_list)
-            moment_image = \
-                calculate_image_frequency_moments(channel_image,
-                                                  nmoment=eMRP["defaults"]
-                                                  ["write_images"]
-                                                  ["number_moments"])
-            moment_image_list = \
-                image_scatter_channels(moment_image)
-            for imim, mim in enumerate(moment_image_list):
-                mim.data /= float(nchannels)
-                write_image(mim, origin + "_moment", imim)
+                    channel_images.append(result)
+            channel_image = image_gather_channels(channel_images)
+            moment_image = calculate_image_frequency_moments(channel_image, nmoment=nmoment)
+            moment_images = image_scatter_channels(moment_image)
+            for moment, im in enumerate(moment_images):
+                write_image(im, im_type, moment, 'moment')
     
     else:
-        for iorigin, _ in enumerate(results):
-            origin = origins[iorigin]
-            for ivis, bvis in enumerate(bvis_list):
-                result = results[iorigin][ivis]
-                if origin == "residual":
+        nspw = len(results[0])
+        log.info("Writing {0} spws of images".format(nspw))
+        for it, im_type in enumerate(im_types):
+            for spw in range(nspw):
+                result = results[it][spw]
+                if im_type == "residual":
                     result = result[0]
                 if isinstance(result, Image):
-                    write_image(result, origin, ivis)
-    
-    if eMRP["defaults"]["write_images"]["write_moments"]:
-        for iorigin, _ in enumerate(results):
-            origin = origins[iorigin]
-            channel_image_list = list()
-            for ivis, bvis in enumerate(bvis_list):
-                result = results[iorigin][ivis]
-                if origin == "residual":
-                    channel_image_list.append(result[0])
-                else:
-                    channel_image_list.append(result)
-            channel_image = image_gather_channels(channel_image_list)
-            nchannels = len(channel_image_list)
-            moment_image = \
-                calculate_image_frequency_moments(channel_image)
-            moment_image_list = \
-                image_scatter_channels(moment_image,
-                                       eMRP["defaults"]["write_images"]
-                                       ["number_moments"])
-            for imim, mim in enumerate(moment_image_list):
-                mim.data /= float(nchannels)
-                write_image(mim, origin + "_moment", imim)
-    
-    else:
-        for iorigin, _ in enumerate(results):
-            origin = origins[iorigin]
-            for ivis, bvis in enumerate(bvis_list):
-                result = results[iorigin][ivis]
-                if origin == "residual":
-                    result = result[0]
-                if isinstance(result, Image):
-                    write_image(result, origin, ivis)
+                    write_image(result, im_type, spw, 'spw')
 
 
-def write_gaintables(eMRP, bvis_list, mode, gt_list):
+def write_gaintables(eMRP, mode, gt_list):
     """ Plot and save gaintables
 
     :param eMRP:
-    :param bvis_list:
     :param mode:
     :param results:
     :return:
@@ -480,15 +439,11 @@ def write_gaintables(eMRP, bvis_list, mode, gt_list):
                     mode=mode)
             log.info(qa_gaintable(gt[cc],
                                   context="{0} {1}".format(filename_root, cc)))
-            for value in ["amp", "phase", "residual"]:
-                plt.clf()
-                fig, ax = plt.subplots(1, 1)
-                gaintable_plot(gt[cc], ax, value=value)
-                plt.title("{0} {1} {2}".format(filename_root, value, cc))
-                plt.tight_layout()
-                plotfile = "{0}_{1}_{2}.png".format(filename_root, value, cc)
-                plt.savefig(plotfile)
-                plt.show(block=False)
+            plt.clf()
+            gaintable_plot(gt[cc], title='Frequency window {igt}'.format(igt=igt), cc=cc)
+            plotfile = "{0}_{1}.png".format(filename_root, cc)
+            plt.savefig(plotfile)
+            plt.show(block=False)
 
 
 def apply_calibration(gt_list, bvis_list, eMRP):
@@ -511,7 +466,7 @@ def apply_calibration(gt_list, bvis_list, eMRP):
     return cvis_list
 
 
-def ms_save(bvis_list, eMRP):
+def save_ms(bvis_list, eMRP):
     """ Save the averaged and calibrated BlockVis to an MS
 
     :param bvis_list:

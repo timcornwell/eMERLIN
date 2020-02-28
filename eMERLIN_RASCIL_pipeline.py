@@ -13,11 +13,13 @@ from erp.pipelines.support import start_eMRP_dict, list_steps, read_inputs, \
     find_run_steps, get_pipeline_version, get_logger, \
     get_defaults, save_obj, exit_pipeline
 
+from rascil.workflows.rsexecute.execution_support import rsexecute
+
+
 current_version = "0.0.1"
 
 
-def run_pipeline(inputs_file='./inputs.ini',
-                 run_steps=[], skip_steps=[]):
+def run_pipeline(inputs_file='./inputs.ini', run_steps=[], skip_steps=[]):
     # Create directory structure
     info_dir = './'
     
@@ -76,24 +78,21 @@ def run_pipeline(inputs_file='./inputs.ini',
     
     bvis_list = None
     
-    if eMRP['input_steps']['ms_list'] > 0:
-        ms_list(eMRP)
+    if eMRP['input_steps']['list_ms'] > 0:
+        list_ms(eMRP)
     
-    if eMRP['input_steps']['ms_load'] > 0:
-        bvis_list = ms_load(eMRP)
+    if eMRP['input_steps']['load_ms'] > 0:
+        bvis_list = load_ms(eMRP)
     
     if eMRP['input_steps']['flag'] > 0:
         bvis_list = flag(bvis_list, eMRP)
     
-    if eMRP['input_steps']['plot_vis'] > 0:
-        plot_vis(bvis_list, eMRP)
-    
     if eMRP['input_steps']['average_channels'] > 0:
         bvis_list = average_channels(bvis_list, eMRP)
-    
-    if eMRP['input_steps']['combine_spw'] > 0:
-        bvis_list = combine_spw(bvis_list, eMRP)
-    
+
+    if eMRP['input_steps']['plot_vis'] > 0:
+        plot_vis(bvis_list, eMRP)
+
     if eMRP['input_steps']['convert_stokesI'] > 0:
         bvis_list = convert_stokesI(bvis_list, eMRP)
     
@@ -109,19 +108,22 @@ def run_pipeline(inputs_file='./inputs.ini',
     
     if eMRP['input_steps']['cip'] > 0:
         results = cip(bvis_list, model_list, eMRP)
+        results = rsexecute.compute(results, sync=True)
         if eMRP['input_steps']['write_images'] > 0:
-            write_images(eMRP, bvis_list, 'cip', results)
+            write_images(eMRP, 'cip', results)
     
     if eMRP['input_steps']['ical'] > 0:
         results = ical(bvis_list, model_list, eMRP)
+        results = rsexecute.compute(results, sync=True)
         if eMRP['input_steps']['write_images'] > 0:
-            write_images(eMRP, bvis_list, 'ical', results[0:3])
+            write_images(eMRP, 'ical', results[0:3])
         if eMRP['input_steps']['write_gaintables'] > 0:
-            write_gaintables(eMRP, bvis_list, 'ical', results[3])
-        if eMRP['input_steps']['ms_save'] > 0:
-            apply_calibration(results[3], bvis_list, eMRP)
-        if eMRP['input_steps']['ms_save'] > 0:
-            ms_save(bvis_list, eMRP)
+            write_gaintables(eMRP, 'ical', results[3])
+        if eMRP['input_steps']['save_ms'] > 0:
+            bvis_list = apply_calibration(results[3], bvis_list, eMRP)
+            if eMRP['input_steps']['combine_spw'] > 0:
+                bvis_list = combine_spw(bvis_list, eMRP)
+            save_ms(bvis_list, eMRP)
     
     # Keep important files
     # save_obj(eMRP, info_dir + 'eMRP_info.pkl')
@@ -155,7 +157,7 @@ def get_args():
                         default=[])
     parser.add_argument('-s', '--skip-steps', dest='skip_steps',
                         type=str, nargs='+',
-                        help='Whispace separated list of steps to skip',
+                        help='Whitespace separated list of steps to skip',
                         default=[])
     parser.add_argument('-l', '--list-steps', dest='list_steps',
                         action='store_true',
