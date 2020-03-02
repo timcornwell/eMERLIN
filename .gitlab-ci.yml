@@ -7,13 +7,18 @@ docs:
   stage: build
   before_script:
     - apt-get update
-    - apt-get -y install pandoc
+    - apt-get -y install
+    - git clone https://github.com/timcornwell/rascil.git
+    - cd rascil
+    - python setup.py install
+    - pip install -r requirements.txt -r requirements-docs.txt
+    - cd ..
     - git clone https://github.com/timcornwell/eMERLIN_RASCIL_pipeline.git
     - cd eMERLIN_RASCIL_pipeline
     - python setup.py install
-    - cd ..
     - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
+    - cd ..
   script:
     - ERP=`pwd` PYTHONPATH=`pwd`:../erp make -k -j -C docs html
   after_script:
