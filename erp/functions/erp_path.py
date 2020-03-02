@@ -2,13 +2,16 @@
 
 """
 
+__all__ = ['erp_path']
+
 import os
+
 def erp_path(path):
     """Converts a path that might be relative to functions root into an
     absolute path::
 
         erp_path('data/3C277.1C.ms')
-        '/Users/timcornwell/Code/rascil/data/3C277.1C.ms'
+        '/Users/timcornwell/Code/eMERLIN_RASCIL_pipeline/data/3C277.1C.ms'
 
     :param path:
     :return: absolute path

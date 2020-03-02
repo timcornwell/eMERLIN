@@ -1,6 +1,12 @@
-"""Functions needed for RASCIL pipeline
+""" Support functions needed for RASCIL pipeline
 
 """
+
+__all__ = ['makedir', 'rmdir', 'rmfile', 'mvdir', 'exit_pipeline',
+           'get_pipeline_version', 'read_inputs', 'find_run_steps', 'info_start_steps',
+           'list_of_steps', 'list_steps', 'start_eMRP_dict', 'get_logger', 'get_defaults',
+           'save_obj', 'load_obj']
+
 import collections
 import configparser
 import json
@@ -153,7 +159,7 @@ def info_start_steps():
 
 
 def list_of_steps():
-    import erp.pipelines.imaging_steps as imsteps
+    import erp.functions.imaging_steps as imsteps
     imaging_steps = imsteps.__all__
     return imaging_steps
 
@@ -199,7 +205,7 @@ def get_logger(LOG_FORMAT='%(asctime)s | %(levelname)s | %(message)s',
     return log
 
 
-def get_defaults(eMRP, pipeline_path='\.'):
+def get_defaults(eMRP, pipeline_path='./'):
     if os.path.isfile('./default_params.json'):
         defaults_file = './default_params.json'
     else:

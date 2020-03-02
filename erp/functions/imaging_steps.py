@@ -1,5 +1,23 @@
 """
-Functions used in eMERLIN RASCIL pipelie
+Functions used in eMERLIN RASCIL pipeline.
+
+Following the design of the eMERLIN CASA pipeline, parameters are passed in the eMRP dictionary.
+The "inputs" dict contains values read from the inputs.ini file, and the "defaults" dict contains
+values read from the defaults_params.json file.
+
+
+The major functions are written using Dask.delayed to delay execution. This is wrapped in the
+rsexecute execute and compute classes: rsexecute.execute(myfunc)(pars) says to delay or defer the
+actual computation to later. rsexecute.compute(my_list) actually forces the computation of a
+list of delayed function calls.
+
+The data for a particular source from a MeasurementSet are read in, one BlockVis per data description.
+The visbility data are kept internally as a list of RASCIL BlockVis. This list can be transformed by
+for example averaging and splitting. Thus 4 spectral windows each of 128 channels can be split and
+averaged into 16 BlockVis, in each of which 32 of the original channels averaged into a single channel.
+Imaging and calibration proceeds by processing these BlockVis in parallel, using Dask/rsexecute to
+distribute the processing over the available cores or nodes available.
+
 """
 
 __all__ = ["initialize_pipeline",
@@ -18,7 +36,7 @@ __all__ = ["initialize_pipeline",
            "write_images",
            "write_gaintables",
            "apply_calibration",
-           "save_ms",
+           "write_ms",
            "finalize_pipeline"]
 
 import logging
@@ -27,16 +45,12 @@ import matplotlib.pyplot as plt
 import numpy
 
 from rascil.data_models import Image
-from rascil.processing_components import show_image, qa_image, \
-    export_image_to_fits, calculate_image_frequency_moments, \
-    image_gather_channels, image_scatter_channels, \
-    qa_gaintable, create_blockvisibility_from_ms, \
-    average_blockvisibility_by_channel, convert_blockvisibility_to_stokesI, \
-    create_image_from_visibility, \
-    advise_wide_field, create_calibration_controls, gaintable_plot, \
-    concatenate_blockvisibility_frequency, \
-    plot_uvcoverage, plot_visibility, apply_gaintable, \
-    export_blockvisibility_to_ms
+from rascil.processing_components import show_image, qa_image, export_image_to_fits, \
+    calculate_image_frequency_moments, image_gather_channels, image_scatter_channels, \
+    qa_gaintable, create_blockvisibility_from_ms, average_blockvisibility_by_channel, \
+    convert_blockvisibility_to_stokesI, create_image_from_visibility, advise_wide_field, \
+    create_calibration_controls, gaintable_plot, concatenate_blockvisibility_frequency, \
+    plot_uvcoverage, plot_visibility, apply_gaintable, export_blockvisibility_to_ms
 from rascil.processing_components.visibility import list_ms as rascil_list_ms
 from rascil.workflows import continuum_imaging_list_rsexecute_workflow, \
     ical_list_rsexecute_workflow, weight_list_rsexecute_workflow
@@ -46,9 +60,10 @@ log = logging.getLogger('logger')
 
 
 def initialize_pipeline(eMRP, get_logger):
-    """ Initialise the pipeline: do we want to use dask?
+    """ Initialise the pipeline: set up dask if we are using it.
 
-    :param eMRP:
+    :param eMRP: Parameters for the pipeline read from template_default_params.json
+    :param get_logger: Function to get a logger.
     """
     if eMRP['defaults']['global']['distributed']:
         log.info("Distributed processing using Dask")
@@ -62,7 +77,7 @@ def initialize_pipeline(eMRP, get_logger):
 
 
 def finalize_pipeline(eMRP):
-    """ Initialise the pipeline: do we want to use dask?
+    """ Finalise the pipeline
 
     :param eMRP:
     """
@@ -75,7 +90,7 @@ def list_ms(eMRP):
     """ List the contents of MeasurementSet
     
     :param eMRP:
-    :return:
+    :return: list of source names in MS, list of data descriptions in MS
     """
     log.info("Listing Measurement Set {0}".format(eMRP['inputs']['ms_path']))
     sources, dds = rascil_list_ms(eMRP['inputs']['ms_path'])
@@ -85,12 +100,10 @@ def list_ms(eMRP):
 
 
 def load_ms(eMRP):
-    """ Load the MeasurementSet into a list of BlockVis
-    
-    This is run serially because the multiple MS readers does not appear to work.
+    """ Load the MeasurementSet into a list of RASCIL BlockVis
     
     :param eMRP:
-    :return: list of BlockVisibilities
+    :return: list of BlockVis
     """
     log.info("Loading Measurement Set {0}".format(eMRP['inputs']['ms_path']))
     
@@ -109,8 +122,6 @@ def load_ms(eMRP):
     # Put this to the Dask cluster
     bvis_list = rsexecute.persist(bvis_list)
     
-    from dask import visualize
-    visualize(bvis_list, filename='load_ms.png')
     return bvis_list
 
 
@@ -197,9 +208,8 @@ def average_channels(bvis_list, eMRP):
                         (bvis_list[idd], eMRP['defaults']["average_channels"]["nchan"])
                         for idd, dd in enumerate(eMRP['defaults']['load_ms']['dds'])]
     average_vis_list = [item for sublist in average_vis_list for item in sublist]
-
+    
     bvis_list = rsexecute.persist(average_vis_list)
-
     return bvis_list
 
 
@@ -208,14 +218,12 @@ def combine_spw(bvis_list, eMRP):
     
     :param bvis_list:
     :param eMRP:
-    :return:
+    :return: List containing a single BlockVis
     """
     log.info("Combining across spectral windows")
-    cvis_list = [concatenate_blockvisibility_frequency(bvis_list)]
-    if eMRP['defaults']["create_images"]["verbose"]:
-        for cvis in cvis_list:
-            log.info(str(cvis))
-    return cvis_list
+    bvis_list = [rsexecute.execute(concatenate_blockvisibility_frequency)(bvis_list)]
+    bvis_list = rsexecute.persist(bvis_list)
+    return bvis_list
 
 
 def get_advice(bvis_list, eMRP):
@@ -227,12 +235,9 @@ def get_advice(bvis_list, eMRP):
     """
     return [advise_wide_field(bvis,
                               delA=eMRP['defaults']["get_advice"]["delA"],
-                              oversampling_synthesised_beam=eMRP['defaults']
-                              ["get_advice"]["oversampling_synthesised_beam"],
-                              guard_band_image=eMRP['defaults']["get_advice"]
-                              ["guard_band_image"],
-                              wprojection_planes=eMRP['defaults']["get_advice"]
-                              ["wprojection_planes"],
+                              oversampling_synthesised_beam=eMRP['defaults']["get_advice"]["oversampling_synthesised_beam"],
+                              guard_band_image=eMRP['defaults']["get_advice"]["guard_band_image"],
+                              wprojection_planes=eMRP['defaults']["get_advice"]["wprojection_planes"],
                               verbose=eMRP['defaults']["get_advice"]["verbose"])
             for bvis in bvis_list]
 
@@ -246,7 +251,7 @@ def convert_stokesI(bvis_list, eMRP):
     """
     log.info("Converting to stokesI visibility")
     bvis_list = [rsexecute.execute(convert_blockvisibility_to_stokesI)(bvis) for bvis in bvis_list]
-
+    
     bvis_list = rsexecute.persist(bvis_list)
     return bvis_list
 
@@ -261,10 +266,8 @@ def create_images(bvis_list, eMRP):
     log.info("Creating template images")
     model_list = [rsexecute.execute(create_image_from_visibility)
                   (bvis,
-                   npixel=eMRP['defaults']
-                   ["create_images"]["npixel"],
-                   cellsize=eMRP['defaults']
-                   ["create_images"]['cellsize'],
+                   npixel=eMRP['defaults']["create_images"]["npixel"],
+                   cellsize=eMRP['defaults']["create_images"]['cellsize'],
                    nchan=1,
                    frequency=[numpy.mean(bvis.frequency)],
                    channel_bandwidth=[numpy.sum(bvis.channel_bandwidth)])
@@ -285,7 +288,7 @@ def weight(bvis_list, model_list, eMRP):
     log.info("Applying {} weighting".format(eMRP['defaults']['weight']['algorithm']))
     
     bvis_list = weight_list_rsexecute_workflow(bvis_list, model_list,
-                                          weighting=eMRP['defaults']['weight']['algorithm'])
+                                               weighting=eMRP['defaults']['weight']['algorithm'])
     
     bvis_list = rsexecute.persist(bvis_list)
     return bvis_list
@@ -392,6 +395,7 @@ def write_images(eMRP, pipeline, results):
         filename = "{0}.fits".format(filename_root)
         export_image_to_fits(im, filename)
     
+    # Write moment images
     if eMRP["defaults"]["write_images"]["write_moments"]:
         nspw = len(results[0])
         nmoment = eMRP["defaults"]["write_images"]["number_moments"]
@@ -408,7 +412,8 @@ def write_images(eMRP, pipeline, results):
             moment_images = image_scatter_channels(moment_image)
             for moment, im in enumerate(moment_images):
                 write_image(im, im_type, moment, 'moment')
-    
+                
+    # Write spectral images
     else:
         nspw = len(results[0])
         log.info("Writing {0} spws of images".format(nspw))
@@ -466,7 +471,7 @@ def apply_calibration(gt_list, bvis_list, eMRP):
     return cvis_list
 
 
-def save_ms(bvis_list, eMRP):
+def write_ms(bvis_list, eMRP):
     """ Save the averaged and calibrated BlockVis to an MS
 
     :param bvis_list:

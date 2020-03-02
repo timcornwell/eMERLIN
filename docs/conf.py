@@ -38,7 +38,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.autosummary',
     'sphinx_automodapi.automodapi',
-    'sphinx_automodapi.smart_resolver'
+    'sphinx_automodapi.smart_resolver',
+    'sphinxarg.ext'
 ]
 
 # The following seem to be buggy
@@ -221,7 +222,7 @@ html_use_index = True
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'rascildoc'
+htmlhelp_basename = 'erpdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
