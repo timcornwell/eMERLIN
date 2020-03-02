@@ -12,8 +12,8 @@ import os
 import sys
 import time
 
-from erp.pipelines.imaging_steps import *
-from erp.pipelines.support import start_eMRP_dict, list_steps, read_inputs, \
+from erp.functions.imaging_steps import *
+from erp.functions.support import start_eMRP_dict, list_steps, read_inputs, \
     find_run_steps, get_pipeline_version, get_logger, \
     get_defaults, save_obj, exit_pipeline
 
@@ -26,27 +26,27 @@ log.setLevel(logging.WARNING)
 class TestArray_functions(unittest.TestCase):
 
     def setUp(self) -> None:
-
-def run_pipeline(inputs_file='./inputs.ini', run_steps=[], skip_steps=[]):
-
-        # Create directory structure
-        info_dir = './'
+        pass
         
+    def test_pipeline(self):
+
+        inputs_file='./inputs.ini'
+        run_steps=["list_ms", "load_ms", "convert_stokesI", "create_images", "weight", "cip", "ical",
+                   "write_images", "write_gaintables", "write_ms"]
+        
+        skip_steps=[]
+
         # Initialize eMRP dictionary, or continue with previous pipeline configuration if possible:
-        eMRP = start_eMRP_dict(info_dir)
+        eMRP = start_eMRP_dict('./')
         
         logger = get_logger()
         
-        start_epoch = time.asctime()
-        logger.info(
-            "eMERLIN RASCIL imaging pipeline, started at  %s" % start_epoch)
-        
-        save_obj(eMRP, info_dir + 'eMRP_info.pkl')
+        save_obj(eMRP, './eMRP_info.pkl')
         
         # Load default parameters
-        assert os.path.isfile('./default_params.json')
-        
         defaults_file = './default_params.json'
+        assert os.path.isfile(defaults_file), 'No defaults file found: {}'.format(defaults_file)
+        
         logger.info('Loading default parameters from {0}:'.format(defaults_file))
         eMRP['defaults'] = json.loads(open(defaults_file).read())
         
@@ -58,7 +58,7 @@ def run_pipeline(inputs_file='./inputs.ini', run_steps=[], skip_steps=[]):
         # Steps to run:
         eMRP['input_steps'] = find_run_steps(eMRP, run_steps, skip_steps)
         
-        ## Pipeline processes, inputs are read from the inputs dictionary
+        # Pipeline processes, inputs are read from the inputs dictionary
         
         eMRP = get_defaults(eMRP, pipeline_path='\.')
         
@@ -67,7 +67,9 @@ def run_pipeline(inputs_file='./inputs.ini', run_steps=[], skip_steps=[]):
         bvis_list = None
         
         if eMRP['input_steps']['list_ms'] > 0:
-            list_ms(eMRP)
+            ss, dd = list_ms(eMRP)
+            assert len(ss) > 0
+            assert len(dd) > 0
         
         if eMRP['input_steps']['load_ms'] > 0:
             bvis_list = load_ms(eMRP)

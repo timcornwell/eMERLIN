@@ -8,14 +8,14 @@ docs:
   before_script:
     - apt-get update
     - apt-get -y install pandoc
-    - git clone https://github.com/SKA-ScienceDataProcessor/rascil rascil
-    - cd rascil
+    - git clone https://github.com/timcornwell/eMERLIN_RASCIL_pipeline.git
+    - cd eMERLIN_RASCIL_pipeline
     - python setup.py install
     - cd ..
     - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
   script:
-    - ERP=`pwd` PYTHONPATH=`pwd`:../rascil make -k -j -C docs html
+    - ERP=`pwd` PYTHONPATH=`pwd`:../erp make -k -j -C docs html
   after_script:
     - mv docs/build/html html
   artifacts:
@@ -23,27 +23,10 @@ docs:
       - html/
     expire_in: 1 week
 
-unittests:
-  stage: build
-  before_script:
-    - git clone https://github.com/SKA-ScienceDataProcessor/rascil rascil
-    - cd rascil
-    - python setup.py install
-    - cd ..
-    - pip install -r requirements.txt -r requirements-test.txt
-  script:
-    - pip install pytest pytest-xdist pytest-cov
-    - ERP=`pwd` PYTHONPATH=`pwd`:../rascil py.test tests --verbose --cov=functions --cov-report=html:coverage --forked
-  artifacts:
-    paths:
-      - coverage
-    expire_in: 1 week
-
 pages:
   stage: deploy
   dependencies:
     - docs
-    - unittests
   script:
     - mv html public
     - mv coverage/ public/coverage

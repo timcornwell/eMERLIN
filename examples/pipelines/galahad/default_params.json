@@ -4,7 +4,7 @@
     "distributed"            : true,
     "graph"                  : true,
     "nworkers"               : 8,
-    "imaging_context"        : "ng",
+    "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
     "initialize_pipeline"    : 1,
@@ -23,7 +23,7 @@
     "write_images"           : 1,
     "write_gaintables"       : 1,
     "apply_calibration"      : 1,
-    "write_ms"                : 1,
+    "write_ms"               : 1,
     "finalize_pipeline"      : 1
   },
   "list_ms": {
@@ -115,12 +115,14 @@
     "verbose"                : true
   },
   "write_gaintables": {
-    "verbose"                : true
+    "verbose"                : false,
+    "gaintablename"          : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg_ical.gt"
   },
   "apply_calibration": {
     "verbose"                : true
   },
   "write_ms": {
-    "verbose"                : true
+    "verbose"                : false,
+    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg_ical.ms"
   }
 }

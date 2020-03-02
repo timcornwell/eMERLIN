@@ -44,7 +44,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy
 
-from rascil.data_models import Image
+from rascil.data_models import Image, export_gaintable_to_hdf5
 from rascil.processing_components import show_image, qa_image, export_image_to_fits, \
     calculate_image_frequency_moments, image_gather_channels, image_scatter_channels, \
     qa_gaintable, create_blockvisibility_from_ms, average_blockvisibility_by_channel, \
@@ -362,7 +362,7 @@ def ical(bvis_list, model_list, eMRP):
         tol=eMRP['defaults']['ical']['tol'],
         controls=controls)
     
-    return results
+    return bvis_list, results
 
 
 def write_images(eMRP, pipeline, results):
@@ -449,6 +449,8 @@ def write_gaintables(eMRP, mode, gt_list):
             plotfile = "{0}_{1}.png".format(filename_root, cc)
             plt.savefig(plotfile)
             plt.show(block=False)
+    
+    export_gaintable_to_hdf5(gt_list, eMRP['defaults']['write_gaintables']['gaintablename'] )
 
 
 def apply_calibration(gt_list, bvis_list, eMRP):
@@ -478,7 +480,7 @@ def write_ms(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
-    ms_out = eMRP['inputs']['ms_path'] + "_out"
+    ms_out = eMRP['defaults']['write_ms']['msout']
     log.info("Writing Measurement Set {0}".format(ms_out))
     
     export_blockvisibility_to_ms(ms_out, bvis_list)

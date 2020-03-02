@@ -138,4 +138,8 @@ dask-worker-space
 
 *.pkl
 
-data/
+
+.DS_Store
+/data/3C277.1_avg.ms
+3C277.1C.ms
+api

@@ -74,18 +74,16 @@ Load just 3C277.1 (1252+5634) and ‘1302+5748’
 
 .. code:: ipython3
 
-    selected_sources = ['1302+5748']
+    selected_sources = ['1252+5634']
     bvis_list = create_blockvisibility_from_ms('../../data/3C277.1_avg.ms', datacolumn='CORRECTED_DATA',
                                                selected_sources=selected_sources)
     sources = numpy.unique([bv.source for bv in bvis_list])
     print(sources)
-    print(numpy.max(bvis_list[0].flagged_vis))
 
 
 .. parsed-literal::
 
-    ['1302+5748']
-    (3.6251304149627686-1.2135764360427856j)
+    ['1252+5634']
 
 
 .. code:: ipython3
@@ -136,8 +134,8 @@ Average across all each BlockVisibility over all 128 channels, and then concaten
 
 .. parsed-literal::
 
-    (0.5486884866032965-0.025304708926176478j)
-    (0.5617308082532079-0.006965692214194751j)
+    (0.5942149855506919+0.25849645483049244j)
+    (0.5942149855506919+0.25849645483049244j)
 
 
 Run one of:
@@ -291,17 +289,17 @@ Run one of:
 
 .. parsed-literal::
 
-    32171.104385375977
-    32171.104385375977
-    32171.104385375977
-    32171.104385375977
+    39888.92642211914
+    39888.92642211914
+    39888.92642211914
+    39888.92642211914
     
     
-    Processing 1302+5748 via invert pipeline
+    Processing 1252+5634 via invert pipeline
     
     
-    (0.5328565679475172-0.01925461547793666j)
-    [[3101.]]
+    (0.5628157878449809+0.24727594336057643j)
+    [[4.05665186e-09]]
 
 
 
@@ -326,21 +324,16 @@ Run one of:
 
 .. parsed-literal::
 
-    WARNING: The fit may be unsuccessful; check fit_info['message'] for more information. [astropy.modeling.fitting]
-
-
-.. parsed-literal::
-
     Quality assessment:
     	Origin: qa_image
     	Context: Deconvolved image
     	Data:
     		shape: '(1, 1, 1024, 1024)'
-    		max: '0.0660288777182319'
-    		min: '-0.0036082975645527573'
-    		maxabs: '0.0660288777182319'
-    		rms: '9.891240519684737e-05'
-    		sum: '0.38794770853309335'
+    		max: '0.0036272867214082053'
+    		min: '-0.0009807507175889553'
+    		maxabs: '0.0036272867214082053'
+    		rms: '1.4188489569253859e-05'
+    		sum: '-0.030812973739534736'
     		medianabs: '0.0'
     		medianabsdevmedian: '0.0'
     		median: '0.0'
@@ -354,7 +347,7 @@ Run one of:
 
 
 
-.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_8.png
+.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_7.png
 
 
 .. parsed-literal::
@@ -364,14 +357,14 @@ Run one of:
     	Context: Residual image
     	Data:
     		shape: '(1, 1, 1024, 1024)'
-    		max: '0.010901296724006032'
-    		min: '-0.01121451535388803'
-    		maxabs: '0.01121451535388803'
-    		rms: '0.0006071874058498673'
-    		sum: '-0.2536146346994712'
-    		medianabs: '0.0003852406189283605'
-    		medianabsdevmedian: '0.0003853356548594309'
-    		median: '1.4435665603078142e-06'
+    		max: '0.055089626911652596'
+    		min: '-0.052399765522608534'
+    		maxabs: '0.055089626911652596'
+    		rms: '0.006744988605371439'
+    		sum: '45.905253126508846'
+    		medianabs: '0.0018630935065471269'
+    		medianabsdevmedian: '0.0018633364257326604'
+    		median: '1.207813094811434e-05'
     
 
 
@@ -382,7 +375,7 @@ Run one of:
 
 
 
-.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_11.png
+.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_10.png
 
 
 .. parsed-literal::
@@ -392,14 +385,14 @@ Run one of:
     	Context: Restored image
     	Data:
     		shape: '(1, 1, 1024, 1024)'
-    		max: '0.3837102173522667'
-    		min: '-0.01121451535388803'
-    		maxabs: '0.3837102173522667'
-    		rms: '0.0024169261768822664'
-    		sum: '29.130297053075758'
-    		medianabs: '0.0003852370705837218'
-    		medianabsdevmedian: '0.0003853153133583213'
-    		median: '1.7521509637877972e-06'
+    		max: '0.07101016172158274'
+    		min: '-0.052399765522608534'
+    		maxabs: '0.07101016172158274'
+    		rms: '0.006871665000032742'
+    		sum: '28.12000504964719'
+    		medianabs: '0.002011509877516229'
+    		medianabsdevmedian: '0.0020109518386469075'
+    		median: '-2.977572130769528e-05'
     
 
 
@@ -410,7 +403,7 @@ Run one of:
 
 
 
-.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_14.png
+.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_13.png
 
 
 
@@ -420,7 +413,7 @@ Run one of:
 
 
 
-.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_16.png
+.. image:: eMERLIN_imaging_files/eMERLIN_imaging_10_15.png
 
 
 
