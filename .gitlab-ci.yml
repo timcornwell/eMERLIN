@@ -8,7 +8,7 @@ docs:
   before_script:
     - apt-get update
     - apt-get -y install
-    - git clone https://github.com/timcornwell/rascil.git
+    - git clone https://github.com/SKA-ScienceDataProcessor/rascil
     - cd rascil
     - python setup.py install
     - pip install -r requirements.txt -r requirements-docs.txt
