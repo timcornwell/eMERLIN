@@ -56,10 +56,6 @@ class TestERP_functions(unittest.TestCase):
         # Steps to run:
         eMRP['input_steps'] = find_run_steps(eMRP, run_steps, skip_steps)
         
-        # Pipeline processes, inputs are read from the inputs dictionary
-        
-        eMRP = get_defaults(eMRP)
-        
         initialize_pipeline(eMRP, get_logger=get_logger)
         
         bvis_list = None
