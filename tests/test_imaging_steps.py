@@ -29,7 +29,7 @@ class TestERP_functions(unittest.TestCase):
         
     def test_pipeline(self):
 
-        inputs_file='./inputs.ini'
+        inputs_file='tests/inputs.ini'
         run_steps=["list_ms", "load_ms", "average_channels", "get_advice", "plot_vis", "create_images", "weight", "cip", "ical",
                    "write_images", "write_gaintables", "write_ms"]
         
@@ -41,7 +41,7 @@ class TestERP_functions(unittest.TestCase):
         logger = get_logger()
         
         # Load default parameters
-        defaults_file = './default_params.json'
+        defaults_file = 'tests/default_params.json'
         assert os.path.isfile(defaults_file), 'No defaults file found: {}'.format(defaults_file)
         
         logger.info('Loading default parameters from {0}:'.format(defaults_file))

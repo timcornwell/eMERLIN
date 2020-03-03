@@ -3,7 +3,7 @@
     "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
-    "results_directory"      : "../test_results",
+    "results_directory"      : "test_results",
     "initialize_pipeline"    : 1,
     "list_ms"                : 1,
     "load_ms"                : 1,
@@ -29,11 +29,11 @@
     "memory"                 : 4e9
   },
   "list_ms": {
-    "ms_path"                : "../data/3C277.1C.16channels.ms",
+    "ms_path"                : "data/3C277.1C.16channels.ms",
     "verbose"                 : true
   },
   "load_ms": {
-    "ms_path"                : "../data/3C277.1C.16channels.ms",
+    "ms_path"                : "data/3C277.1C.16channels.ms",
     "verbose"                 : false,
     "data_column"             : "DATA",
     "source"                  : "1252+5634",
@@ -125,7 +125,7 @@
     "verbose"                : true
   },
   "write_ms": {
-    "msout"                  : "../test_results/3C277.1_avg_test.ms",
+    "msout"                  : "test_results/3C277.1_avg_test.ms",
     "verbose"                : true
   }
 }
