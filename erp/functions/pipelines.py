@@ -4,11 +4,8 @@
 
 __all__ = ["run_erp_ical"]
 
-import os
-import sys
-
 from erp.functions.imaging_steps import *
-from erp.functions.support import start_eMRP_dict, list_steps, get_logger
+from erp.functions.support import get_logger
 from rascil.workflows.rsexecute.execution_support import rsexecute
 
 def run_erp_ical(eMRP):
@@ -18,6 +15,7 @@ def run_erp_ical(eMRP):
     :return:
     """
     initialize_pipeline(eMRP, get_logger=get_logger)
+    
     bvis_list = None
     if eMRP['input_steps']['list_ms'] > 0:
         list_ms(eMRP)
@@ -52,9 +50,6 @@ def run_erp_ical(eMRP):
             write_gaintables(eMRP, 'ical', results[3])
         if eMRP['input_steps']['write_ms'] > 0:
             bvis_list = apply_calibration(results[3], bvis_list, eMRP)
-            bvis_list = combine_spw(bvis_list, eMRP)
             write_ms(bvis_list, eMRP)
-    # Keep important files
-    # save_obj(eMRP, info_dir + 'eMRP_info.pkl')
-    # os.system('cp eMRP.log {}eMRP.log.txt'.format(info_dir))
+
     finalize_pipeline(eMRP)

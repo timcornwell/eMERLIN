@@ -26,7 +26,6 @@ __all__ = ["initialize_pipeline",
            "flag",
            "plot_vis",
            "average_channels",
-           "combine_spw",
            "get_advice",
            "convert_stokesI",
            "create_images",
@@ -81,8 +80,11 @@ def finalize_pipeline(eMRP):
 
     :param eMRP:
     """
+    results_directory = eMRP['defaults']["global"]["results_directory"]
+
     if eMRP['defaults']['global']['distributed']:
-        rsexecute.save_statistics('eMERLIN_RASCIL_pipeline')
+        rsexecute.save_statistics\
+            ('{results_directory}/eMERLIN_RASCIL_pipeline'.format(results_directory=results_directory))
         rsexecute.close()
 
 
@@ -92,8 +94,8 @@ def list_ms(eMRP):
     :param eMRP:
     :return: list of source names in MS, list of data descriptions in MS
     """
-    log.info("Listing Measurement Set {0}".format(eMRP['inputs']['ms_path']))
-    sources, dds = rascil_list_ms(eMRP['inputs']['ms_path'])
+    log.info("Listing Measurement Set {0}".format(eMRP['defaults']['load_ms']['ms_path']))
+    sources, dds = rascil_list_ms(eMRP['defaults']['load_ms']['ms_path'])
     log.info("MS contains sources {}".format(sources))
     log.info("MS contains data descriptors {}".format(dds))
     return sources, dds
@@ -105,10 +107,10 @@ def load_ms(eMRP):
     :param eMRP:
     :return: list of BlockVis
     """
-    log.info("Loading Measurement Set {0}".format(eMRP['inputs']['ms_path']))
+    log.info("Loading Measurement Set {0}".format(eMRP['defaults']['load_ms']['ms_path']))
     
     def load_and_list(dd):
-        bv = create_blockvisibility_from_ms(eMRP['inputs']['ms_path'],
+        bv = create_blockvisibility_from_ms(eMRP['defaults']['load_ms']['ms_path'],
                                             datacolumn=eMRP['defaults']['load_ms']['data_column'],
                                             selected_sources=[eMRP['defaults']['load_ms']['source']],
                                             selected_dds=[dd])[0]
@@ -136,7 +138,7 @@ def flag(bvis_list, eMRP):
     try:
         import aoflagger as aof
         
-        for bvis in bvis_list:
+        def flag_bvis(bvis):
             ntimes, nant, _, nch, npol = bvis.vis.shape
             
             aoflagger = aof.AOFlagger()
@@ -168,9 +170,11 @@ def flag(bvis_list, eMRP):
                     log.info(str(a1) + " " + str(
                         a2) + ": percentage flags on zero data: "
                              + str(flagcount * 100.0 / (nch * ntimes)) + "%")
+        return [rsexecute.execute(flag_bvis(bv)) for bv in bvis_list]
+    
     except ModuleNotFoundError:
         log.error('aoflagger is not loaded - cannot flag')
-    
+
     return bvis_list
 
 
@@ -181,7 +185,7 @@ def plot_vis(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
-    for bvis in bvis_list:
+    def plot(bvis):
         plt.clf()
         plot_uvcoverage([bvis], title='UV Coverage {source:s}'.format(source=bvis.source))
         plt.tight_layout()
@@ -191,6 +195,9 @@ def plot_vis(bvis_list, eMRP):
                         title='Visibility amplitude {source:s}'.format(source=bvis.source))
         plt.tight_layout()
         plt.show(block=False)
+        return bvis
+    
+    return [rsexecute.execute(plot)(bv) for bv in bvis_list]
 
 
 def average_channels(bvis_list, eMRP):
@@ -213,18 +220,6 @@ def average_channels(bvis_list, eMRP):
     return bvis_list
 
 
-def combine_spw(bvis_list, eMRP):
-    """ Add the BlockVis across frequency
-    
-    :param bvis_list:
-    :param eMRP:
-    :return: List containing a single BlockVis
-    """
-    log.info("Combining across spectral windows")
-    bvis_list = [rsexecute.execute(concatenate_blockvisibility_frequency)(bvis_list)]
-    bvis_list = rsexecute.persist(bvis_list)
-    return bvis_list
-
 
 def get_advice(bvis_list, eMRP):
     """ Get advice on imaging parameters
@@ -233,7 +228,8 @@ def get_advice(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
-    return [advise_wide_field(bvis,
+    return bvis_list, \
+           [rsexecute.execute(advise_wide_field)(bvis,
                               delA=eMRP['defaults']["get_advice"]["delA"],
                               oversampling_synthesised_beam=eMRP['defaults']["get_advice"]["oversampling_synthesised_beam"],
                               guard_band_image=eMRP['defaults']["get_advice"]["guard_band_image"],
@@ -264,7 +260,7 @@ def create_images(bvis_list, eMRP):
     :return:
     """
     log.info("Creating template images")
-    model_list = [rsexecute.execute(create_image_from_visibility)
+    model_list = [rsexecute.execute(create_image_from_visibility, nout=1)
                   (bvis,
                    npixel=eMRP['defaults']["create_images"]["npixel"],
                    cellsize=eMRP['defaults']["create_images"]['cellsize'],
@@ -303,7 +299,7 @@ def cip(bvis_list, model_list, eMRP):
     :return:
     """
     log.info("Processing with RASCIL continuum imaging pipeline")
-    
+
     results = continuum_imaging_list_rsexecute_workflow(
         bvis_list, model_list,
         context=eMRP['defaults']['global']['imaging_context'],
@@ -373,12 +369,14 @@ def write_images(eMRP, pipeline, results):
     :param results:
     :return:
     """
+    results_directory = eMRP['defaults']["global"]["results_directory"]
     
     im_types = ["deconvolved", "residual", "restored"]
     
     def write_image(im, im_type="restored", index=0, axis='spw'):
         filename_root = \
-            "{project:s}_{source:s}_{pipeline}_{im_type:s}_{axis}{index:d}".format(
+            "{results_directory}/{project:s}_{source:s}_{pipeline}_{im_type:s}_{axis}{index:d}".format(
+                results_directory=results_directory,
                 project=eMRP['defaults']["global"]["project"],
                 source=eMRP['defaults']["load_ms"]["source"],
                 im_type=im_type,
@@ -434,11 +432,13 @@ def write_gaintables(eMRP, mode, gt_list):
     :param results:
     :return:
     """
-    
+    results_directory = eMRP['defaults']["global"]["results_directory"]
+
     for igt, gt in enumerate(gt_list):
         for cc in eMRP['defaults']['ical']['calibration_context']:
             filename_root = \
-                "{project:s}_{origin:d}_{mode}".format(
+                "{results_directory}/{project:s}_{origin:d}_{mode}".format(
+                    results_directory=results_directory,
                     project=eMRP['defaults']["global"]["project"],
                     origin=igt,
                     mode=mode)
@@ -450,7 +450,8 @@ def write_gaintables(eMRP, mode, gt_list):
             plt.savefig(plotfile)
             plt.show(block=False)
     
-    export_gaintable_to_hdf5(gt_list, eMRP['defaults']['write_gaintables']['gaintablename'] )
+            gtfile = "{0}_{1}.hdf5".format(filename_root, cc)
+            export_gaintable_to_hdf5(gt[cc], gtfile)
 
 
 def apply_calibration(gt_list, bvis_list, eMRP):
@@ -470,6 +471,7 @@ def apply_calibration(gt_list, bvis_list, eMRP):
                 cvis = apply_gaintable(cvis, gt[cc])
         cvis_list.append(cvis)
     
+    assert len(cvis_list) == len(bvis_list)
     return cvis_list
 
 
@@ -480,6 +482,9 @@ def write_ms(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
+    log.info("Combining across spectral windows")
+    bvis_list = [concatenate_blockvisibility_frequency(bvis_list)]
+
     ms_out = eMRP['defaults']['write_ms']['msout']
     log.info("Writing Measurement Set {0}".format(ms_out))
     

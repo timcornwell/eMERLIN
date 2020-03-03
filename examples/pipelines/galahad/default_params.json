@@ -1,9 +1,8 @@
 {
   "global": {
-    "msname"                 : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg.ms",
     "distributed"            : true,
-    "graph"                  : true,
     "nworkers"               : 8,
+    "results_directory"      : "./",
     "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
@@ -27,9 +26,11 @@
     "finalize_pipeline"      : 1
   },
   "list_ms": {
+    "ms_path"                : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg.ms",
     "verbose"                 : true
   },
   "load_ms": {
+    "ms_path"                : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg.ms",
     "verbose"                 : false,
     "data_column"             : "CORRECTED_DATA",
     "source"                  : "1252+5634",
@@ -72,7 +73,7 @@
   },
   "cip": {
     "verbose"                 : true,
-    "nmajor"                 : 8,
+    "nmajor"                 : 3,
     "niter"                  : 1000,
     "algorithm"              : "mmclean",
     "nmoment"                : 2,
@@ -115,14 +116,13 @@
     "verbose"                : true
   },
   "write_gaintables": {
-    "verbose"                : false,
-    "gaintablename"          : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg_ical.gt"
+    "verbose"                : true
   },
   "apply_calibration": {
     "verbose"                : true
   },
   "write_ms": {
     "verbose"                : false,
-    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg_ical.ms"
+    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg_nocal.ms",
   }
 }

@@ -83,20 +83,12 @@ def run_pipeline(inputs_file='./inputs.ini', run_steps=[], skip_steps=[]):
     logger.info('Loading default parameters from {0}:'.format(defaults_file))
     eMRP['defaults'] = json.loads(open(defaults_file).read())
     
-    # Inputs
-    if os.path.exists(inputs_file):
-        inputs = read_inputs(inputs_file)
-        eMRP['inputs'] = inputs
-    else:
-        logger.critical('No inputs file found: {}'.format(inputs_file))
-        exit_pipeline()
-    
     # Steps to run:
     eMRP['input_steps'] = find_run_steps(eMRP, run_steps, skip_steps)
     
     # Pipeline processes, inputs are read from the inputs dictionary
     
-    eMRP = get_defaults(eMRP, pipeline_path='../..')
+    eMRP = get_defaults(eMRP)
 
     run_erp_ical(eMRP)
 

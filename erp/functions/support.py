@@ -178,7 +178,6 @@ def start_eMRP_dict(info_dir='./'):
     except:
         eMRP = collections.OrderedDict()
         eMRP['steps'] = info_start_steps()
-        eMRP['img_stats'] = collections.OrderedDict()
     return eMRP
 
 
@@ -205,11 +204,9 @@ def get_logger(LOG_FORMAT='%(asctime)s | %(levelname)s | %(message)s',
     return log
 
 
-def get_defaults(eMRP, pipeline_path='./'):
-    if os.path.isfile('./default_params.json'):
-        defaults_file = './default_params.json'
-    else:
-        defaults_file = pipeline_path + 'default_params.json'
+def get_defaults(eMRP):
+    defaults_file = './default_params.json'
+    
     logger.info('Loading default parameters from {0}:'.format(defaults_file))
     eMRP['defaults'] = json.loads(open(defaults_file).read())
     return eMRP
