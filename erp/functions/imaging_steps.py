@@ -2,7 +2,7 @@
 Functions used in eMERLIN RASCIL pipeline.
 
 Following the design of the eMERLIN CASA pipeline, parameters are passed in the eMRP dictionary.
-The "inputs" dict contains values read from the inputs.ini file, and the "defaults" dict contains
+The "inputs" sub-dict contains values read from the inputs.ini file, and the "defaults" sub-dict contains
 values read from the defaults_params.json file.
 
 
@@ -80,6 +80,7 @@ def finalize_pipeline(eMRP):
 
     :param eMRP:
     """
+    log.info("Finalising pipeline")
     results_directory = eMRP['defaults']["global"]["results_directory"]
 
     if eMRP['defaults']['global']['distributed']:
@@ -173,7 +174,7 @@ def flag(bvis_list, eMRP):
         return [rsexecute.execute(flag_bvis(bv)) for bv in bvis_list]
     
     except ModuleNotFoundError:
-        log.error('aoflagger is not loaded - cannot flag')
+        log.error('aoflagger is not loaded - cannot flag - will continue pipeline')
 
     return bvis_list
 
@@ -185,6 +186,8 @@ def plot_vis(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
+    log.info("Plotting visibility data")
+
     def plot(bvis):
         plt.clf()
         plot_uvcoverage([bvis], title='UV Coverage {source:s}'.format(source=bvis.source))
@@ -208,9 +211,9 @@ def average_channels(bvis_list, eMRP):
     :return: list of BlockVisibilities
     """
     nchan = eMRP['defaults']["average_channels"]["nchan"]
-    log.info("Averaging by {} channels within spectral windows".format(nchan))
     nout = eMRP['defaults']["average_channels"]["original_nchan"] // \
            eMRP['defaults']["average_channels"]["nchan"]
+    log.info("Averaging by {nchan} channels and splitting into {nout} BlockVis".format(nchan=nchan, nout=nout))
     average_vis_list = [rsexecute.execute(average_blockvisibility_by_channel, nout=nout)
                         (bvis_list[idd], eMRP['defaults']["average_channels"]["nchan"])
                         for idd, dd in enumerate(eMRP['defaults']['load_ms']['dds'])]
@@ -245,7 +248,7 @@ def convert_stokesI(bvis_list, eMRP):
     :param eMRP:
     :return:
     """
-    log.info("Converting to stokesI visibility")
+    log.info("Converting to stokes I visibility")
     bvis_list = [rsexecute.execute(convert_blockvisibility_to_stokesI)(bvis) for bvis in bvis_list]
     
     bvis_list = rsexecute.persist(bvis_list)
@@ -369,6 +372,7 @@ def write_images(eMRP, pipeline, results):
     :param results:
     :return:
     """
+    log.info("Writing images")
     results_directory = eMRP['defaults']["global"]["results_directory"]
     
     im_types = ["deconvolved", "residual", "restored"]
@@ -432,6 +436,7 @@ def write_gaintables(eMRP, mode, gt_list):
     :param results:
     :return:
     """
+    log.info("Writing gaintables")
     results_directory = eMRP['defaults']["global"]["results_directory"]
 
     for igt, gt in enumerate(gt_list):
@@ -462,6 +467,8 @@ def apply_calibration(gt_list, bvis_list, eMRP):
     :param eMRP:
     :return:
     """
+    log.info("Applying calibration")
+
     cvis_list = list()
     for bvis in bvis_list:
         cvis = None

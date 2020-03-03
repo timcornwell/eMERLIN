@@ -149,3 +149,7 @@ test_results/
 *.hdf5
 
 *.png
+
+*.last
+
+data/3C277.1_avg.ms.flagversions/

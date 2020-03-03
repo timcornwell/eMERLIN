@@ -120,6 +120,6 @@
   },
   "write_ms": {
     "verbose"                : false,
-    "msout"                  : "../../test_results3C277.1C.avg_test.ms"
+    "msout"                  : "../../test_results/3C277.1C.avg_test.ms"
   }
 }
