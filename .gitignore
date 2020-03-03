@@ -143,3 +143,9 @@ dask-worker-space
 /data/3C277.1_avg.ms
 3C277.1C.ms
 api
+test_results/
+
+
+*.hdf5
+
+*.png

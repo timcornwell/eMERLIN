@@ -34,7 +34,7 @@ unittests:
     - pip install -r requirements.txt -r requirements-test.txt
   script:
     - pip install pytest pytest-cov
-    - py.test tests/workflows/test*.py --verbose --cov=rascil --cov-report=html:coverage
+    - py.test tests/test*.py --verbose --cov=rascil --cov-report=html:coverage
   artifacts:
     paths:
       - coverage

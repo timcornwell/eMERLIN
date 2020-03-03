@@ -6,6 +6,7 @@
     "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
+    "results_directory"      : "./",
     "initialize_pipeline"    : 1,
     "list_ms"                : 1,
     "load_ms"                : 1,
@@ -25,15 +26,15 @@
     "finalize_pipeline"      : 1
   },
   "list_ms": {
-    "ms_path"                 : "/Users/timcornwell/Code/eMERLIN_RASCIL_pipeline/data/3C277.1C.ms",
+    "ms_path"                 : "../../data/3C277.1C.16channels.ms",
     "verbose"                 : true
   },
   "load_ms": {
-    "ms_path"                 : "/Users/timcornwell/Code/eMERLIN_RASCIL_pipeline/data/3C277.1_avg.ms",
+    "ms_path"                 : "../../data/3C277.1C.16channels.ms",
     "verbose"                 : false,
-    "data_column"             : "CORRECTED_DATA",
+    "data_column"             : "DATA",
     "source"                  : "1252+5634",
-    "dds"                     : [0, 1, 2, 3]
+    "dds"                     : [0]
   },
   "flag": {
     "verbose"                 : false,
@@ -44,8 +45,8 @@
   },
   "average_channels": {
     "verbose"                 : true,
-    "original_nchan"          : 128,
-    "nchan"                   : 32
+    "original_nchan"          : 16,
+    "nchan"                   : 1
   },
   "convert_stokesI": {
     "verbose"                 : true
@@ -119,6 +120,6 @@
   },
   "write_ms": {
     "verbose"                : false,
-    "msout"                  : "/Users/timcornwell/Code/eMERLIN_RASCIL_pipeline/data/3C277.1C.avg.ms"
+    "msout"                  : "../../test_results3C277.1C.avg_test.ms"
   }
 }
