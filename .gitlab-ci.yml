@@ -8,7 +8,7 @@ docs:
   before_script:
     - apt-get update
     - apt-get -y install
-    - git clone https://github.com/SKA-ScienceDataProcessor/rascil
+    - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
     - cd rascil
     - python setup.py install
     - pip install -r requirements.txt -r requirements-docs.txt
