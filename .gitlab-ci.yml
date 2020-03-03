@@ -44,6 +44,7 @@ unittests:
     - pip install -r requirements.txt -r requirements-docs.txt
     - cd ..
   script:
+    - mkdir -p test_results
     - pip install pytest pytest-cov
     - py.test tests/test*.py --verbose --cov=rascil --cov-report=html:coverage
   artifacts:
