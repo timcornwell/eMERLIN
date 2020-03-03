@@ -54,6 +54,7 @@ from rascil.processing_components.visibility import list_ms as rascil_list_ms
 from rascil.workflows import continuum_imaging_list_rsexecute_workflow, \
     ical_list_rsexecute_workflow, weight_list_rsexecute_workflow
 from rascil.workflows.rsexecute.execution_support import rsexecute
+from dask.distributed import Client
 
 log = logging.getLogger('logger')
 
@@ -66,8 +67,10 @@ def initialize_pipeline(eMRP, get_logger):
     """
     if eMRP['defaults']['global']['distributed']:
         log.info("Distributed processing using Dask")
-        rsexecute.set_client(use_dask=True,
-                             n_workers=eMRP['defaults']['global']['nworkers'])
+        client = Client(n_workers=eMRP['defaults']['global']['nworkers'],
+                        memory_limit=eMRP['defaults']['global']['memory'])
+        rsexecute.set_client(use_dask=True, client=client)
+        log.info(client.scheduler_info())
         rsexecute.run(get_logger)
         rsexecute.init_statistics()
     else:

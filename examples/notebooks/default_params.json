@@ -2,7 +2,8 @@
   "global": {
     "distributed"            : true,
     "graph"                  : true,
-    "nworkers"               : 8,
+    "nworkers"               : 4,
+    "memory"                 : 4e9,
     "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
