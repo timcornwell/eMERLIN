@@ -31,7 +31,18 @@ docs:
 unittests:
   stage: build
   before_script:
-    - pip install -r requirements.txt -r requirements-test.txt
+    - apt-get update
+    - apt-get -y install
+    - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
+    - cd rascil
+    - python setup.py install
+    - pip install -r requirements.txt -r requirements-docs.txt
+    - cd ..
+    - git clone https://github.com/timcornwell/eMERLIN_RASCIL_pipeline.git
+    - cd eMERLIN_RASCIL_pipeline
+    - python setup.py install
+    - pip install -r requirements.txt -r requirements-docs.txt
+    - cd ..
   script:
     - pip install pytest pytest-cov
     - py.test tests/test*.py --verbose --cov=rascil --cov-report=html:coverage

@@ -8,13 +8,13 @@ Running notebooks
 
 The best way to get familiar with ERP is via jupyter notebooks. For example::
 
-   jupyter examples/notebooks/eMERLIN_imaging.ipynb
+   jupyter examples/notebooks/3C277.1_pipeline.ipynb
 
 
 .. toctree::
    :maxdepth: 1
 
-   examples/notebooks/eMERLIN_imaging.rst
+   examples/notebooks/3C277.1_pipeline.rst
 
 * :ref:`genindex`
 * :ref:`modindex`

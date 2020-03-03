@@ -1,9 +1,5 @@
 {
   "global": {
-    "distributed"            : true,
-    "graph"                  : true,
-    "nworkers"               : 4,
-    "memory"                 : 4e9,
     "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
@@ -14,6 +10,7 @@
     "plot_vis"               : 1,
     "flag"                   : 1,
     "average_channels"       : 1,
+    "combine_spw"            : 1,
     "get_advice"             : 1,
     "convert_stokesI"        : 1,
     "create_images"          : 1,
@@ -25,6 +22,11 @@
     "apply_calibration"      : 1,
     "write_ms"               : 1,
     "finalize_pipeline"      : 1
+  },
+  "dask": {
+    "distributed"            : true,
+    "nworkers"               : 4,
+    "memory"                 : 4e9
   },
   "list_ms": {
     "ms_path"                 : "../../data/3C277.1C.16channels.ms",
@@ -49,11 +51,14 @@
     "original_nchan"          : 16,
     "nchan"                   : 1
   },
+  "combine_spw": {
+    "verbose"                 : true
+  },
   "convert_stokesI": {
     "verbose"                 : true
   },
   "get_advice": {
-    "verbose"                  : true,
+    "verbose"                  : false,
     "guard_band_image"         : 0.01,
     "delA"                     : 0.02,
     "oversampling_synthesised_beam" : 3.0,
@@ -71,7 +76,7 @@
   },
   "cip": {
     "verbose"                 : true,
-    "nmajor"                 : 8,
+    "nmajor"                 : 3,
     "niter"                  : 1000,
     "algorithm"              : "mmclean",
     "nmoment"                : 2,

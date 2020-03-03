@@ -65,12 +65,12 @@ def initialize_pipeline(eMRP, get_logger):
     :param eMRP: Parameters for the pipeline read from template_default_params.json
     :param get_logger: Function to get a logger.
     """
-    if eMRP['defaults']['global']['distributed']:
+    if eMRP['defaults']['dask']['distributed']:
         log.info("Distributed processing using Dask")
-        client = Client(n_workers=eMRP['defaults']['global']['nworkers'],
-                        memory_limit=eMRP['defaults']['global']['memory'])
+        client = Client(n_workers=eMRP['defaults']['dask']['nworkers'],
+                        memory_limit=eMRP['defaults']['dask']['memory'])
         rsexecute.set_client(use_dask=True, client=client)
-        log.info(client.scheduler_info())
+        log.info("Dask dashboard is at http://127.0.0.1:{}".format(client.scheduler_info()['services']['dashboard']))
         rsexecute.run(get_logger)
         rsexecute.init_statistics()
     else:
@@ -86,7 +86,7 @@ def finalize_pipeline(eMRP):
     log.info("Finalising pipeline")
     results_directory = eMRP['defaults']["global"]["results_directory"]
 
-    if eMRP['defaults']['global']['distributed']:
+    if eMRP['defaults']['dask']['distributed']:
         rsexecute.save_statistics\
             ('{results_directory}/eMERLIN_RASCIL_pipeline'.format(results_directory=results_directory))
         rsexecute.close()
@@ -216,7 +216,8 @@ def average_channels(bvis_list, eMRP):
     nchan = eMRP['defaults']["average_channels"]["nchan"]
     nout = eMRP['defaults']["average_channels"]["original_nchan"] // \
            eMRP['defaults']["average_channels"]["nchan"]
-    log.info("Averaging by {nchan} channels and splitting into {nout} BlockVis".format(nchan=nchan, nout=nout))
+    ntotal = nout * len(eMRP['defaults']['load_ms']['dds'])
+    log.info("Averaging by {nchan} channels and splitting into {ntotal} BlockVis".format(nchan=nchan, ntotal=ntotal))
     average_vis_list = [rsexecute.execute(average_blockvisibility_by_channel, nout=nout)
                         (bvis_list[idd], eMRP['defaults']["average_channels"]["nchan"])
                         for idd, dd in enumerate(eMRP['defaults']['load_ms']['dds'])]

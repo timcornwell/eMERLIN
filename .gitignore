@@ -153,3 +153,5 @@ test_results/
 *.last
 
 data/3C277.1_avg.ms.flagversions/
+
+*.html

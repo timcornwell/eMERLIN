@@ -45,7 +45,8 @@ class TestERP_functions(unittest.TestCase):
         assert os.path.isfile(defaults_file), 'No defaults file found: {}'.format(defaults_file)
         
         logger.info('Loading default parameters from {0}:'.format(defaults_file))
-        eMRP['defaults'] = json.loads(open(defaults_file).read())
+        with open(defaults_file) as jsonfile:
+            eMRP['defaults'] = json.loads(jsonfile.read())
         
         # Inputs
         assert os.path.exists(inputs_file), 'No inputs file found: {}'.format(inputs_file)

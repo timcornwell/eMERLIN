@@ -1,11 +1,9 @@
 {
   "global": {
-    "distributed"            : true,
-    "nworkers"               : 8,
-    "results_directory"      : "./",
     "imaging_context"        : "2d",
     "project"                : "RASCIL",
     "cmap"                   : "rainbow",
+    "results_directory"      : "./",
     "initialize_pipeline"    : 1,
     "list_ms"                : 1,
     "load_ms"                : 1,
@@ -24,6 +22,11 @@
     "apply_calibration"      : 1,
     "write_ms"               : 1,
     "finalize_pipeline"      : 1
+  },
+  "dask": {
+    "distributed"            : true,
+    "nworkers"               : null,
+    "memory"                 : null
   },
   "list_ms": {
     "ms_path"                : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg.ms",
@@ -55,7 +58,7 @@
     "verbose"                 : true
   },
   "get_advice": {
-    "verbose"                  : true,
+    "verbose"                  : false,
     "guard_band_image"         : 0.01,
     "delA"                     : 0.02,
     "oversampling_synthesised_beam" : 3.0,
@@ -108,7 +111,7 @@
     "global_solution"        : true,
     "calibration_context"    : "TG",
     "do_selfcal"             : true,
-    "tol"                    : 1e-3
+    "tol"                    : 1e-8
   },
   "write_images": {
     "write_moments"          : true,
@@ -116,13 +119,13 @@
     "verbose"                : true
   },
   "write_gaintables": {
-    "verbose"                : true
+    "verbose"                : false
   },
   "apply_calibration": {
     "verbose"                : true
   },
   "write_ms": {
     "verbose"                : false,
-    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1_avg_nocal.ms",
+    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1C.16channels.ms"
   }
 }
