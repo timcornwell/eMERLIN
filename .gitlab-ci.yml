@@ -33,6 +33,7 @@ unittests:
     - pip install -r requirements.txt -r requirements-docs.txt
     - cd ..
     - pip install -r requirements.txt -r requirements-test.txt
+    - mkdir -p test_results
   script:
     - pip install pytest pytest-cov
     - py.test tests/test*.py --verbose --cov=erp --cov-report=html:coverage
