@@ -59,7 +59,8 @@ prepare:
 	make -C ../examples/notebooks rst
 	mkdir -p examples/notebooks/
 	cp ../examples/notebooks/*.rst examples/notebooks/
-	cp -R ../examples/notebooks/*_files examples/notebooks/
+	ls -l ../examples/notebooks/*_files
+	- cp -R ../examples/notebooks/*_files examples/notebooks/
 
 .PHONY: html
 html: prepare
