@@ -13,7 +13,6 @@ docs:
     - python setup.py install
     - pip install -r requirements.txt -r requirements-docs.txt
     - cd ..
-    - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
     - mkdir -p test_results
   script:
@@ -28,6 +27,11 @@ docs:
 unittests:
   stage: build
   before_script:
+    - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
+    - cd rascil
+    - python setup.py install
+    - pip install -r requirements.txt -r requirements-docs.txt
+    - cd ..
     - pip install -r requirements.txt -r requirements-test.txt
   script:
     - pip install pytest pytest-cov
