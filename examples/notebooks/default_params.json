@@ -1,7 +1,7 @@
 {
   "global": {
     "imaging_context"        : "2d",
-    "project"                : "RASCIL",
+    "project"                : "eMERLIN_3C277_1",
     "cmap"                   : "rainbow",
     "results_directory"      : "./",
     "initialize_pipeline"    : 1,

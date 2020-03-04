@@ -13,15 +13,11 @@ docs:
     - python setup.py install
     - pip install -r requirements.txt -r requirements-docs.txt
     - cd ..
-    - git clone https://github.com/timcornwell/eMERLIN_RASCIL_pipeline.git
-    - cd eMERLIN_RASCIL_pipeline
-    - python setup.py install
     - pip install -r requirements.txt -r requirements-docs.txt
     - mkdir -p docs/build/html
-    - cd ..
-  script:
     - mkdir -p test_results
-    - ERP=`pwd` PYTHONPATH=`pwd`:../erp make -k -j -C docs html
+  script:
+    - PYTHONPATH=`pwd` make -k -j -C docs html
   after_script:
     - mv docs/build/html html
   artifacts:
@@ -32,22 +28,10 @@ docs:
 unittests:
   stage: build
   before_script:
-    - apt-get update
-    - apt-get -y install pandoc
-    - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
-    - cd rascil
-    - python setup.py install
-    - pip install -r requirements.txt -r requirements-docs.txt
-    - cd ..
-    - git clone https://github.com/timcornwell/eMERLIN_RASCIL_pipeline.git
-    - cd eMERLIN_RASCIL_pipeline
-    - python setup.py install
-    - pip install -r requirements.txt -r requirements-docs.txt
-    - cd ..
+    - pip install -r requirements.txt -r requirements-test.txt
   script:
-    - mkdir -p test_results
     - pip install pytest pytest-cov
-    - py.test tests/test*.py --verbose --cov=rascil --cov-report=html:coverage
+    - py.test tests/test*.py --verbose --cov=erp --cov-report=html:coverage
   artifacts:
     paths:
       - coverage

@@ -1,5 +1,5 @@
 
-NBs = 3C277.1_pipeline.ipynb
+NBs = eMERLIN_3C277_1_pipeline.ipynb
 
 RSTs=  $(NBs:.ipynb=.rst)
 
