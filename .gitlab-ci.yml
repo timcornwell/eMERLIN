@@ -20,6 +20,7 @@ docs:
     - mkdir -p docs/build/html
     - cd ..
   script:
+    - mkdir -p test_results
     - ERP=`pwd` PYTHONPATH=`pwd`:../erp make -k -j -C docs html
   after_script:
     - mv docs/build/html html
