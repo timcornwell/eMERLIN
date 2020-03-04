@@ -3,7 +3,7 @@
 Installation
 ============
 
-ERP can be run on a Linux or macos machine or cluster of machines::
+ERP can be run on a Linux or macos machine or cluster of machines:
 
 .. toctree::
    :maxdepth: 2
@@ -22,6 +22,14 @@ If you are familiar with docker, an easy approach is to use our docker images:
    :maxdepth: 2
 
    installation/ERP_docker
+
+
+Other installations
+++++++++++++++++++*
+
+.. toctree::
+   :maxdepth: 2
+
    installation/ERP_galahad_install
    installation/ERP_P3_install
 
