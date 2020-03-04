@@ -7,7 +7,7 @@ docs:
   stage: build
   before_script:
     - apt-get update
-    - apt-get -y install
+    - apt-get -y install pandoc
     - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
     - cd rascil
     - python setup.py install
@@ -33,7 +33,7 @@ unittests:
   stage: build
   before_script:
     - apt-get update
-    - apt-get -y install
+    - apt-get -y install pandoc
     - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
     - cd rascil
     - python setup.py install
