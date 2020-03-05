@@ -22,6 +22,5 @@ class TestERP_functions(unittest.TestCase):
             json_params = json.loads(df.read())
         run_erp(json_params)
 
-
 if __name__ == '__main__':
     unittest.main()

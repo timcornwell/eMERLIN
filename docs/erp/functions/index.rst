@@ -14,8 +14,9 @@ functions
 .. automodapi::    erp.functions.pipelines
    :no-inheritance-diagram:
 
-.. automodapi::    erp.functions.support
-   :no-inheritance-diagram:
-
 .. automodapi::    erp.functions.erp_path
    :no-inheritance-diagram:
+
+
+
+

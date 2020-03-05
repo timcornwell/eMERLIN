@@ -42,7 +42,7 @@ from rascil.workflows.rsexecute.execution_support import rsexecute
 
 log = logging.getLogger('logger')
 
-def initialize_pipeline(erp_params, get_logger=None):
+def initialize_pipeline(erp_params, get_logger):
     """ Initialise the pipeline: set up dask if we are using it.
 
     :param erp_params: Parameters for the pipeline read from template_default_params.json
