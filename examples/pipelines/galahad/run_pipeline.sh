@@ -1,5 +1,4 @@
 #!/bin/bash
 pwd
-python3 ../../scripts/eMERLIN_RASCIL_pipeline.py -i inputs.ini -r load_ms average_channels \
-convert_stokesI create_images weight ical write_images write_gaintables write_ms
-
+export PYTHONPATH=/home/cornwell/Code/eMERLIN_RASCIL_pipeline:/home/cornwell/Code/rascil
+python3 erp/drivers/erp_script.py --params eMERLIN_3C277_1.json

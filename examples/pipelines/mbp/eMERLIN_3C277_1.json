@@ -1,0 +1,60 @@
+{
+  "configure": {
+    "project"                : "eMERLIN_3C277_1",
+    "results_directory"      : "./results/",
+    "execution_engine"       : "rascil",
+    "distribution"           : "dask"
+  },
+  "dask": {
+    "distributed"            : true,
+    "nworkers"               : null,
+    "memory"                 : null
+  },
+  "ingest": {
+    "verbose"                 : false,
+    "ms_path"                 : "../../../data/3C277.1_avg.ms",
+    "data_column"             : "CORRECTED_DATA",
+    "source"                  : "1252+5634",
+    "dds"                     : [0, 1, 2, 3],
+    "flag_strategy"           : "eMERLIN_strategy.rfis",
+    "original_nchan"          : 128,
+    "nchan"                   : 32
+  },
+  "process": {
+    "verbose"                : false,
+    "weighting_algorithm"    : "uniform",
+    "robustness"             : 0.0,
+    "npixel"                 : 256,
+    "cellsize"               : 9e-08,
+    "imaging_context"        : "2d",
+    "do_wstacking"           : false,
+    "nmajor"                 : 8,
+    "niter"                  : 1000,
+    "algorithm"              : "mmclean",
+    "nmoment"                : 2,
+    "gain"                   : 0.1,
+    "scales"                 : [0, 3, 10],
+    "threshold"              : 0.003,
+    "fractional_threshold"   : 0.3,
+    "window_shape"           : "quarter",
+    "T_first_selfcal"        : 2,
+    "T_phase_only"           : true,
+    "T_timeslice"            : "auto",
+    "G_first_selfcal"        : 5,
+    "G_phase_only"           : false,
+    "G_timeslice"            : 1200.0,
+    "B_first_selfcal"        : 8,
+    "B_phase_only"           : false,
+    "B_timeslice"            : 1e5,
+    "global_solution"        : true,
+    "calibration_context"    : "TG",
+    "do_selfcal"             : true,
+    "tol"                    : 1e-8
+  },
+  "stage": {
+    "verbose"                 : false,
+    "write_moments"          : true,
+    "number_moments"         : 1,
+    "msout"                  : "../../../test_results/3C277.1C.avg_test.ms"
+  }
+}

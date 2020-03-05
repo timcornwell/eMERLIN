@@ -16,7 +16,7 @@ def erp_path(path):
     :param path:
     :return: absolute path
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)) + "/../")
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)) + "/../../")
     erphome = os.getenv('ERP', project_root)
     return os.path.join(erphome, path)
 

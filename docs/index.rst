@@ -24,7 +24,6 @@ http://127.0.0.1:8787/status
    :maxdepth: 1
 
    ERP_install
-   ERP_examples
    ERP_api
 
 * :ref:`genindex`

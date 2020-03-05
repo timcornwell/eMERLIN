@@ -56,11 +56,9 @@ clean:
 
 .PHONY: prepare
 prepare:
-	make -C ../examples/notebooks rst
-	pwd
-	mkdir -p examples/notebooks/
-	cp ../examples/notebooks/*.rst examples/notebooks/
-	ls -l ../examples/notebooks/
+	- make -C ../examples/notebooks rst
+	- mkdir -p examples/notebooks/
+	- cp ../examples/notebooks/*.rst examples/notebooks/
 	- cp -R ../examples/notebooks/*_files examples/notebooks/
 
 .PHONY: html
