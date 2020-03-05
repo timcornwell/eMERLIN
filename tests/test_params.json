@@ -1,7 +1,7 @@
 {
   "configure": {
     "project"                : "eMERLIN_3C277_1",
-    "results_directory"      : "../test_results/",
+    "results_directory"      : "test_results/",
     "execution_engine"       : "rascil",
     "distribution"           : "dask"
   },
@@ -12,7 +12,7 @@
   },
   "ingest": {
     "verbose"                 : false,
-    "ms_path"                 : "../data/3C277.1C.16channels.ms",
+    "ms_path"                 : "data/3C277.1C.16channels.ms",
     "data_column"             : "DATA",
     "source"                  : "1252+5634",
     "dds"                     : [0],
@@ -55,6 +55,6 @@
     "verbose"                 : false,
     "write_moments"          : true,
     "number_moments"         : 1,
-    "msout"                  : "../test_results/3C277.1C.avg_test.ms"
+    "msout"                  : "test_results/3C277.1C.avg_test.ms"
   }
 }
