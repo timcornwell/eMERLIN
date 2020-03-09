@@ -5,7 +5,7 @@ services:
     build:
       context: ./erp
       dockerfile: Dockerfile
-    image: timcornwell/rascil-full
+    image: timcornwell/erp
     hostname: dask-scheduler
     volumes:
       - "${HOME}:${HOME}"
@@ -18,7 +18,7 @@ services:
     build:
       context: ./erp
       dockerfile: Dockerfile
-    image: timcornwell/rascil-full
+    image: timcornwell/erp
     hostname: dask-worker
     volumes:
       - "${HOME}:${HOME}"
@@ -28,7 +28,7 @@ services:
     build:
       context: ./erp-notebook
       dockerfile: Dockerfile
-    image: timcornwell/functions-notebook
+    image: timcornwell/erp
     hostname: notebook
     volumes:
       - "${HOME}:${HOME}"

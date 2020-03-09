@@ -1,11 +1,7 @@
 {
   "configure": {
     "project"                : "eMERLIN_3C277_1",
-    "results_directory"      : "test_results/",
     "execution_engine"       : "rascil",
-    "distribution"           : "dask"
-  },
-  "dask": {
     "distributed"            : true,
     "nworkers"               : null,
     "memory"                 : null
@@ -52,7 +48,8 @@
     "tol"                    : 1e-8
   },
   "stage": {
-    "verbose"                 : false,
+    "verbose"                : false,
+    "results_directory"      : "test_results/",
     "write_moments"          : true,
     "number_moments"         : 1,
     "msout"                  : "test_results/3C277.1C.avg_test.ms"

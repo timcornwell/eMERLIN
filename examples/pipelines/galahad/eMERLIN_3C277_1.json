@@ -1,11 +1,7 @@
 {
   "configure": {
     "project"                : "eMERLIN_3C277_1",
-    "results_directory"      : "./results/",
     "execution_engine"       : "rascil",
-    "distribution"           : "dask"
-  },
-  "dask": {
     "distributed"            : true,
     "nworkers"               : null,
     "memory"                 : null
@@ -52,9 +48,10 @@
     "tol"                    : 1e-8
   },
   "stage": {
-    "verbose"                 : false,
+    "verbose"                : false,
+    "results_directory"      : "/share/nas/cornwell/data/3C277.1_20150505/results",
     "write_moments"          : true,
     "number_moments"         : 1,
-    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/3C277.1C.16channels.ms"
+    "msout"                  : "/share/nas/cornwell/data/3C277.1_20150505/results/3C277.1C.16channels.ms"
   }
 }

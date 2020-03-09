@@ -30,6 +30,3 @@ RUN cp /usr/local/lib/aoflagger.so /usr/lib/python3.7
 
 WORKDIR /rascil
 
-# Set runtime environment variables.
-ENV RASCIL=/rascil
-

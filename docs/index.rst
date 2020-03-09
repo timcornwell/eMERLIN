@@ -14,7 +14,7 @@ The structure of the ERP package is:
   convenient wrappers around RASCIL functions. The input parameters are passed by a dictionary
   called eMRP that is read from a JSON format file located in the local directory.
 - A pipeline function runs these in a predetermined sequence, roughly load ms, average,
-  imaging with selfcalibration, save results.
+  imaging with self-calibration, save results.
 
 RASCIL uses the Dask package (https://dask.org) for distributing the processing over many cores or nodes. This allows
 scaling from a laptop to a cluster. For a pipeline running locally, the Dask diagnostics can be seen at

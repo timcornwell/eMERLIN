@@ -42,16 +42,31 @@ from rascil.workflows.rsexecute.execution_support import rsexecute
 
 log = logging.getLogger('logger')
 
-def initialize_pipeline(erp_params, get_logger):
+def initialize_pipeline(erp_params, get_logger=None):
     """ Initialise the pipeline: set up dask if we are using it.
 
-    :param erp_params: Parameters for the pipeline read from template_default_params.json
-    :param get_logger: Function to get a logger.
+    :param erp_params: Parameters for the pipeline read from erp_params.json
+    :param get_logger: Optional function to get a logger that is shared across distributed processing
+
+    The relevant parameters are::
+    
+        {
+            'configure':
+                {
+                    'execution_engine': execution engine i.e. 'rascil',
+                    'project': Name of the project e.g. 'eMERLIN_3C277_1',
+                    'distributed': Distributed processing with Dask? e.g. True,
+                    'memory': Memory per Dask worker e.g. None (Dask guesses) or 64GB,
+                    'nworkers': Number of Dask workers e.g. None (Dask guesses) or 8
+                },
+        }
+
+    
     """
-    if erp_params['dask']['distributed']:
+    if erp_params['configure']['distributed']:
         log.info("Distributed processing using Dask")
-        client = Client(n_workers=erp_params['dask']['nworkers'],
-                        memory_limit=erp_params['dask']['memory'])
+        client = Client(n_workers=erp_params['configure']['nworkers'],
+                        memory_limit=erp_params['configure']['memory'])
         rsexecute.set_client(use_dask=True, client=client)
         log.info("Dask dashboard is at http://127.0.0.1:{}".format(client.scheduler_info()['services']['dashboard']))
         if get_logger is not None: rsexecute.run(get_logger)
@@ -63,13 +78,18 @@ def initialize_pipeline(erp_params, get_logger):
 
 def finalize_pipeline(erp_params):
     """ Finalise the pipeline
+    
+    If appropriate, stage the Dask statistics and close Dask.
 
     :param erp_params:
+    
+    The relevant fields in the dictionary are:
+    
     """
     log.info("Finalising pipeline")
-    results_directory = erp_params["configure"]["results_directory"]
+    results_directory = erp_params["stage"]["results_directory"]
     
-    if erp_params['dask']['distributed']:
+    if rsexecute.using_dask:
         rsexecute.save_statistics \
             ('{results_directory}/eMERLIN_RASCIL_pipeline'.format(results_directory=results_directory))
         rsexecute.close()
@@ -78,8 +98,30 @@ def finalize_pipeline(erp_params):
 def ingest(erp_params):
     """ Ingest the data and flag, plot, average
     
+    1. Read from a MeasurementSet
+    2. Optional flag with aoflagger
+    3. Standard visibility plots
+    4. Average over a number of channels
+    5. Convert BlockVis to stokesI
+    
     :param erp_params:
     :return: List of BlockVis (or graph)
+    
+    The relevant fields of the dictoionary are::
+
+        'ingest':
+            {
+                'ms_path': MeasurementSet name e.g. 'data/3C277.1C_avg.ms',
+                'data_column': 'MeasurementSet data column: DATA, MODEL_DATA, or CORRECTED_DATA,
+                'source': Name of source to load e.g. '1252+5634',
+                'dds': List of data descriptors to load e.g. [0, 1, 2, 3]
+                'flag_strategy': AOFlaffer strategy file e.g. 'eMERLIN_strategy.rfis',
+                'nchan': Number of channels to average e.g. 16,
+                'original_nchan': Number of original channels e.g. 128,
+                'verbose': False,
+            }
+            
+
     """
     log.info("Listing Measurement Set {0}".format(erp_params['ingest']['ms_path']))
     sources, dds = rascil_list_ms(erp_params['ingest']['ms_path'])
@@ -103,47 +145,48 @@ def ingest(erp_params):
     # Put this to the Dask cluster
     bvis_list = rsexecute.persist(bvis_list)
     
-    log.info("Flagging visibility data")
-    try:
-        import aoflagger as aof
+    if erp_params['ingest']['flag_strategy'] is not None:
+        log.info("Flagging visibility data")
+        try:
+            import aoflagger as aof
+            
+            def flag_bvis(bvis):
+                ntimes, nant, _, nch, npol = bvis.vis.shape
+                
+                aoflagger = aof.AOFlagger()
+                # Shape of returned buffer is actually nch, ntimes
+                data = aoflagger.make_image_set(ntimes, nch, npol * 2)
+                
+                log.info("Number of times: " + str(data.width()))
+                log.info("Number of antennas:" + str(nant))
+                log.info("Number of channels: " + str(data.height()))
+                log.info("Number of polarisations: " + str(npol))
+                eMERLIN_strategy = \
+                    aoflagger.load_strategy(erp_params['flag_strategy'])
+                
+                for a2 in range(0, nant - 1):
+                    for a1 in range(a2 + 1, nant):
+                        for pol in range(npol):
+                            data.set_image_buffer(2 * pol,
+                                                  numpy.real(bvis.vis[:, a1, a2, :,
+                                                             pol]).T)
+                            data.set_image_buffer(2 * pol + 1,
+                                                  numpy.imag(bvis.vis[:, a1, a2, :,
+                                                             pol]).T)
+                        
+                        flags = aoflagger.run(eMERLIN_strategy, data)
+                        flagvalues = flags.get_buffer() * 1
+                        bvis.data['flags'][:, a1, a2, :, :] = flagvalues.T[
+                            ..., numpy.newaxis]
+                        flagcount = sum(sum(flagvalues))
+                        log.info(str(a1) + " " + str(
+                            a2) + ": percentage flags on zero data: "
+                                 + str(flagcount * 100.0 / (nch * ntimes)) + "%")
+            
+            return [rsexecute.execute(flag_bvis(bv)) for bv in bvis_list]
         
-        def flag_bvis(bvis):
-            ntimes, nant, _, nch, npol = bvis.vis.shape
-            
-            aoflagger = aof.AOFlagger()
-            # Shape of returned buffer is actually nch, ntimes
-            data = aoflagger.make_image_set(ntimes, nch, npol * 2)
-            
-            log.info("Number of times: " + str(data.width()))
-            log.info("Number of antennas:" + str(nant))
-            log.info("Number of channels: " + str(data.height()))
-            log.info("Number of polarisations: " + str(npol))
-            eMERLIN_strategy = \
-                aoflagger.load_strategy(erp_params['flag']['strategy'])
-            
-            for a2 in range(0, nant - 1):
-                for a1 in range(a2 + 1, nant):
-                    for pol in range(npol):
-                        data.set_image_buffer(2 * pol,
-                                              numpy.real(bvis.vis[:, a1, a2, :,
-                                                         pol]).T)
-                        data.set_image_buffer(2 * pol + 1,
-                                              numpy.imag(bvis.vis[:, a1, a2, :,
-                                                         pol]).T)
-                    
-                    flags = aoflagger.run(eMERLIN_strategy, data)
-                    flagvalues = flags.get_buffer() * 1
-                    bvis.data['flags'][:, a1, a2, :, :] = flagvalues.T[
-                        ..., numpy.newaxis]
-                    flagcount = sum(sum(flagvalues))
-                    log.info(str(a1) + " " + str(
-                        a2) + ": percentage flags on zero data: "
-                             + str(flagcount * 100.0 / (nch * ntimes)) + "%")
-        
-        return [rsexecute.execute(flag_bvis(bv)) for bv in bvis_list]
-    
-    except ModuleNotFoundError:
-        log.warning('aoflagger is not loaded - cannot flag - will continue pipeline')
+        except ModuleNotFoundError:
+            log.warning('aoflagger is not loaded - cannot flag - will continue pipeline')
     
     log.info("Plotting visibility data")
     
@@ -182,9 +225,49 @@ def ingest(erp_params):
 def process(bvis_list, erp_params):
     """ Actually process
     
-    :param bvis_list:
+    1. Create template images
+    2. Optionally weight the data
+    3. Run the ICAL pipeline (imaging and self-calibration)
+    
+    :param bvis_list: List of BlockVis to progress in parallel (or graph)
     :param erp_params:
     :return: List of BlockVis (or graph), results from ical
+    
+    The relevant fields of the dictionary are::
+    
+        'process':
+            {
+                'cellsize': Image cellsize in radians e.g. 9e-08,
+                'npixel': Image size in pixels e.g. 256,
+                'imaging_context': Type of gridder e.g. 2d or ng,
+                'do_wstacking': Correct for w term in imaging_context='ng' e.g. False,
+                'algorithm': Clean algorithm, 'hogbom', 'mmclean', 'mfsmsclean',
+                'fractional_threshold': Fractional of peak to end a major cycle e.g. 0.3,
+                'gain': Loop gain e.g. 0.1,
+                'niter': Number of clean interations per major cycle e.g. 1000,
+                'nmajor': Number of major cycles e.g. 8,
+                'nmoment': Number of moments for MSMFS algorithm e.g. 2,
+                'scales': Scales for MSMFS algorithm e.g. [0, 3, 10],
+                'threshold': Absolute threshold to stop all cleaning e.g. 0.003,
+                'weighting_algorithm': 'natural' or 'uniform',
+                'window_shape': 'quarter' or 'no_edge',
+                'do_selfcal': No self-calibration at the end of each major cycle e.g. True,
+                'calibration_context': Jones terms to solve for e.g. 'TG',
+                'global_solution': Is the solution across all frequencies e.g. True,
+                'T_first_selfcal': First major cycle to perform T selfcalibration e.g. 2,
+                'T_phase_only': Phase only solution? e.g. True
+                'T_timeslice': Solution interval 'auto' or time in seconds
+                'G_first_selfcal': First major cycle to perform G selfcalibration e.g. 5,
+                'G_phase_only': False,
+                'G_timeslice': Solution interval 'auto' or time in seconds e.g. 1200,
+                'B_first_selfcal': First major cycle to perform B selfcalibration e.g. 8,
+                'B_phase_only': False,
+                'B_timeslice': Solution interval 'auto' or time in seconds e.g 100000.0,
+                'tol': Tolerance for gain solution e.g. 1e-8,
+                'verbose': False,
+            },
+   
+    
     """
     log.info("Creating template images")
     model_list = [rsexecute.execute(create_image_from_visibility, nout=1)
@@ -244,12 +327,25 @@ def stage(erp_params, bvis_list, results):
     """ Stage the results
 
     :param erp_params:
-    :param pipeline:
-    :param results:
+    :param results: Results from ICAL (not a graph!)
     :return:
+    
+    The relevant parameters are::
+    
+        'stage':
+            {
+                'msout': Name of output MeasurementSet,
+                'write_moments': True or False (write moments instead of spectral cubes),
+                'number_moments': number of moments to write,
+                'results_directory': Directory to write results e.g. 'results/'
+                'verbose': False
+            }
+        }
+
+
     """
     log.info("Writing images")
-    results_directory = erp_params["configure"]["results_directory"]
+    results_directory = erp_params["stage"]["results_directory"]
     
     im_types = ["deconvolved", "residual", "restored"]
     
@@ -305,7 +401,7 @@ def stage(erp_params, bvis_list, results):
                     write_image(result, im_type, spw, 'spw')
     
     log.info("Writing gaintables")
-    results_directory = erp_params["configure"]["results_directory"]
+    results_directory = erp_params["stage"]["results_directory"]
     
     gt_list = results[3]
     for igt, gt in enumerate(gt_list):
