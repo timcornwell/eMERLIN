@@ -27,7 +27,7 @@ docs:
 unittests:
   stage: build
   before_script:
-    - git clone -b feature_second_eMERLIN https://github.com/SKA-ScienceDataProcessor/rascil
+    - git clone https://github.com/SKA-ScienceDataProcessor/rascil
     - cd rascil
     - python setup.py install
     - pip install -r requirements.txt -r requirements-docs.txt
